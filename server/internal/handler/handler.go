@@ -36,6 +36,23 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/sessions", s.handleSessionsList)
 	mux.HandleFunc("/api/sessions/", s.handleSessionDetail)
 
+	// Problems API
+	mux.HandleFunc("/api/problems", s.handleProblemsList)
+	mux.HandleFunc("/api/problems/", s.handleProblemDetail)
+
+	// Analysis API (11 endpoints)
+	mux.HandleFunc("/api/analysis/overview", s.handleAnalysisOverview)
+	mux.HandleFunc("/api/analysis/timeline", s.handleAnalysisTimeline)
+	mux.HandleFunc("/api/analysis/models", s.handleAnalysisModels)
+	mux.HandleFunc("/api/analysis/cache", s.handleAnalysisCache)
+	mux.HandleFunc("/api/analysis/anomalies", s.handleAnalysisAnomalies)
+	mux.HandleFunc("/api/analysis/ttft", s.handleAnalysisTTFT)
+	mux.HandleFunc("/api/analysis/cost-ranking", s.handleAnalysisCostRanking)
+	mux.HandleFunc("/api/analysis/tools", s.handleAnalysisTools)
+	mux.HandleFunc("/api/analysis/subagent", s.handleAnalysisSubagent)
+	mux.HandleFunc("/api/analysis/turn-efficiency", s.handleAnalysisTurnEfficiency)
+	mux.HandleFunc("/api/analysis/agents", s.handleAnalysisAgents)
+
 	mux.HandleFunc("/health", s.handleHealth)
 	mux.HandleFunc("/", s.handleDashboard)
 }
