@@ -1793,75 +1793,27 @@
                             <button class="filter-btn">运行中</button>
                         </div>
                     </div>
-
-                    <div class="session-item has-anomaly active">
-                        <div class="session-header">
-                            <span class="session-id">abc-123-def</span>
-                            <span class="session-status status-completed">已完成</span>
-                        </div>
-                        <div class="session-meta">
-                            <span>Claude Code</span>
-                            <span>2024-01-15 14:30</span>
-                        </div>
-                        <div class="session-stats">
-                            <span class="session-stat">🔴 2 异常</span>
-                            <span class="session-stat">45 工具调用</span>
-                            <span class="session-stat">$2.35</span>
-                            <span class="session-stat">12k tokens</span>
-                        </div>
-                    </div>
-
-                    <div class="session-item">
-                        <div class="session-header">
-                            <span class="session-id">ghi-789-jkl</span>
-                            <span class="session-status status-running">运行中</span>
-                        </div>
-                        <div class="session-meta">
-                            <span>Codex</span>
-                            <span>2024-01-15 15:00</span>
-                        </div>
-                        <div class="session-stats">
-                            <span class="session-stat">23 工具调用</span>
-                            <span class="session-stat">$1.20</span>
-                            <span class="session-stat">8k tokens</span>
-                        </div>
-                    </div>
-
-                    <div class="session-item">
-                        <div class="session-header">
-                            <span class="session-id">mno-456-pqr</span>
-                            <span class="session-status status-completed">已完成</span>
-                        </div>
-                        <div class="session-meta">
-                            <span>Copilot CLI</span>
-                            <span>2024-01-15 13:45</span>
-                        </div>
-                        <div class="session-stats">
-                            <span class="session-stat">18 工具调用</span>
-                            <span class="session-stat">$0.85</span>
-                            <span class="session-stat">5k tokens</span>
-                        </div>
-                    </div>
+                    <!-- Session items will be dynamically rendered by JavaScript -->
                 </aside>
 
                 <section class="session-detail-panel">
                     <div class="session-detail-header">
                         <div class="session-title-row">
-                            <h2>abc-123-def</h2>
-                            <span class="session-status status-completed">已完成</span>
+                            <h2>-</h2>
+                            <span class="session-status status-completed">-</span>
                         </div>
                         <div class="session-info-grid">
                             <div class="info-item">
-                                <div class="info-label">Agent</div>
-                                <div class="info-value">Claude Code</div>
+                                <div class="info-label">Project</div>
+                                <div class="info-value">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">持续时间</div>
-                                <div class="info-value">8min 32s</div>
+                                <div class="info-value">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">总成本</div>
-                                <div class="info-value" style="color: var(--accent-yellow);">$2.35</div>
+                                <div class="info-value" style="color: var(--accent-yellow);">-</div>
                             </div>
                         </div>
                     </div>
@@ -2422,61 +2374,17 @@
             <div class="problems-layout">
                 <aside class="problems-list">
                     <div class="problems-header">
-                        <h2>问题列表 <span class="severity-badge severity-critical">2 critical</span></h2>
+                        <h2>问题列表</h2>
                     </div>
-
-                    <div class="problem-item active">
-                        <div class="problem-type">
-                            <span class="severity-badge severity-critical">critical</span>
-                            slow_tool: Bash
-                        </div>
-                        <div class="problem-meta">Session: abc-123 | Claude Code</div>
-                        <div class="problem-time">2024-01-15 14:32:18</div>
-                    </div>
-
-                    <div class="problem-item">
-                        <div class="problem-type">
-                            <span class="severity-badge severity-high">high</span>
-                            repeated_tool: Read (4次失败)
-                        </div>
-                        <div class="problem-meta">Session: def-456 | Codex</div>
-                        <div class="problem-time">2024-01-15 14:28:05</div>
-                    </div>
-
-                    <div class="problem-item">
-                        <div class="problem-type">
-                            <span class="severity-badge severity-medium">medium</span>
-                            high_cost_turn: $1.25
-                        </div>
-                        <div class="problem-meta">Session: ghi-789 | Claude Code</div>
-                        <div class="problem-time">2024-01-15 14:15:22</div>
-                    </div>
-
-                    <div class="problem-item">
-                        <div class="problem-type">
-                            <span class="severity-badge severity-medium">medium</span>
-                            token_burn_fast: 120k/5min
-                        </div>
-                        <div class="problem-meta">Session: abc-123 | Claude Code</div>
-                        <div class="problem-time">2024-01-15 13:50:00</div>
-                    </div>
-
-                    <div class="problem-item">
-                        <div class="problem-type">
-                            <span class="severity-badge severity-low">low</span>
-                            context_overflow: 3次压缩
-                        </div>
-                        <div class="problem-meta">Session: jkl-012 | Copilot CLI</div>
-                        <div class="problem-time">2024-01-15 13:30:18</div>
-                    </div>
+                    <!-- Problem items will be dynamically rendered by JavaScript -->
                 </aside>
 
                 <section class="detail-panel">
                     <div class="detail-header">
-                        <h2>slow_tool: Bash (45秒)</h2>
+                        <h2>-</h2>
                         <div>
-                            <span class="severity-badge severity-critical">critical</span>
-                            <span style="color: var(--text-secondary); margin-left: 8px;">2024-01-15 14:32:18</span>
+                            <span class="severity-badge severity-medium">-</span>
+                            <span style="color: var(--text-secondary); margin-left: 8px;">-</span>
                         </div>
                     </div>
 
@@ -2484,19 +2392,19 @@
                         <div class="stats-row">
                             <div class="stat-card">
                                 <div class="stat-label">执行时间</div>
-                                <div class="stat-value error">45s</div>
+                                <div class="stat-value">-</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-label">工具名称</div>
-                                <div class="stat-value">Bash</div>
+                                <div class="stat-value">-</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-label">Session</div>
-                                <div class="stat-value" style="font-size: 14px;">abc-123-def</div>
+                                <div class="stat-value" style="font-size: 14px;">-</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-label">Agent</div>
-                                <div class="stat-value" style="font-size: 14px;">Claude Code</div>
+                                <div class="stat-value" style="font-size: 14px;">-</div>
                             </div>
                         </div>
 
@@ -2504,48 +2412,33 @@
                             <h3>根因推断</h3>
                             <div class="inference-box">
                                 <div class="inference-title">推断结果</div>
-                                <div class="inference-text">
-                                    permission prompt 导致用户确认延迟。在 PreToolUse 和 PostToolUse 之间存在 PermissionPrompt 事件，耗时约 40 秒，说明用户需要手动批准 Bash 工具调用。
-                                </div>
+                                <div class="inference-text">-</div>
                             </div>
                             <div class="suggestion-box">
                                 <div class="suggestion-title">建议</div>
-                                <div class="inference-text">
-                                    检查 ~/.claude/settings.json 的 permission 配置，考虑将 Bash 工具设置为 auto-approve 或添加到 allowedTools 列表中。
-                                </div>
+                                <div class="inference-text">-</div>
                             </div>
                         </div>
 
                         <div class="detail-section">
                             <h3>关联事件链</h3>
-                            <div class="related-events">
-                                <span class="related-event-badge">PreToolUse → Bash</span>
-                                <span class="related-event-badge highlight">PermissionPrompt (40s)</span>
-                                <span class="related-event-badge">PostToolUse → Bash</span>
-                            </div>
+                            <div class="related-events">-</div>
                         </div>
 
                         <div class="detail-section">
                             <h3>上下文快览</h3>
                             <div class="context-preview">
                                 <div class="context-label">tool_input:</div>
-                                <div class="context-content">{"command": "npm install", "timeout": 60000}</div>
+                                <div class="context-content">-</div>
                                 <div class="context-label" style="margin-top: 12px;">tool_result:</div>
-                                <div class="context-content">added 1423 packages in 45s</div>
+                                <div class="context-content">-</div>
                             </div>
                         </div>
 
                         <div class="detail-section">
                             <h3>Session 时间线（异常位置高亮）</h3>
                             <div class="timeline">
-                                <div class="timeline-track">
-                                    <div class="timeline-event tool" style="left: 10%;" title="PreToolUse: Read"></div>
-                                    <div class="timeline-event tool" style="left: 25%;" title="PostToolUse: Read"></div>
-                                    <div class="timeline-event tool" style="left: 40%;" title="PreToolUse: Bash"></div>
-                                    <div class="timeline-event anomaly highlight" style="left: 55%;" title="PermissionPrompt"></div>
-                                    <div class="timeline-event error" style="left: 70%;" title="slow_tool detected"></div>
-                                    <div class="timeline-event tool" style="left: 85%;" title="PostToolUse: Bash"></div>
-                                </div>
+                                <div class="timeline-track"></div>
                                 <div class="timeline-labels">
                                     <span>14:30:00</span>
                                     <span>14:31:00</span>
@@ -2638,79 +2531,7 @@
                             </div>
                             <!-- 时间线 -->
                             <div class="session-timeline">
-                                <div class="timeline-row" onclick="switchView('sessions')">
-                                    <div class="timeline-time">08:30</div>
-                                    <div class="timeline-dot normal"></div>
-                                    <div class="timeline-info">
-                                        <span class="timeline-session">abc-123-def</span>
-                                        <span class="timeline-agent">Claude Code</span>
-                                    </div>
-                                    <div class="timeline-cost">$1.20</div>
-                                    <div class="timeline-level normal">中</div>
-                                </div>
-                                <div class="timeline-row" onclick="switchView('sessions')">
-                                    <div class="timeline-time">09:15</div>
-                                    <div class="timeline-dot normal"></div>
-                                    <div class="timeline-info">
-                                        <span class="timeline-session">ghi-789-jkl</span>
-                                        <span class="timeline-agent">Codex</span>
-                                    </div>
-                                    <div class="timeline-cost">$0.80</div>
-                                    <div class="timeline-level normal">中</div>
-                                </div>
-                                <div class="timeline-row high" onclick="switchView('sessions')">
-                                    <div class="timeline-time">10:00</div>
-                                    <div class="timeline-dot high"></div>
-                                    <div class="timeline-info">
-                                        <span class="timeline-session">mno-456-pqr</span>
-                                        <span class="timeline-agent">Claude Code</span>
-                                        <span class="timeline-tag">包含 3 Subagent</span>
-                                    </div>
-                                    <div class="timeline-cost">$2.35</div>
-                                    <div class="timeline-level high">🔴 高</div>
-                                </div>
-                                <div class="timeline-row" onclick="switchView('sessions')">
-                                    <div class="timeline-time">11:45</div>
-                                    <div class="timeline-dot low"></div>
-                                    <div class="timeline-info">
-                                        <span class="timeline-session">xyz-111-aaa</span>
-                                        <span class="timeline-agent">Copilot CLI</span>
-                                    </div>
-                                    <div class="timeline-cost">$0.45</div>
-                                    <div class="timeline-level low">低</div>
-                                </div>
-                                <div class="timeline-row high" onclick="switchView('sessions')">
-                                    <div class="timeline-time">14:00</div>
-                                    <div class="timeline-dot anomaly"></div>
-                                    <div class="timeline-info">
-                                        <span class="timeline-session">bbb-222-ccc</span>
-                                        <span class="timeline-agent">Claude Code</span>
-                                        <span class="timeline-tag anomaly">⚠️ slow_tool 异常</span>
-                                    </div>
-                                    <div class="timeline-cost">$1.85</div>
-                                    <div class="timeline-level anomaly">异常</div>
-                                </div>
-                                <div class="timeline-row" onclick="switchView('sessions')">
-                                    <div class="timeline-time">15:30</div>
-                                    <div class="timeline-dot normal"></div>
-                                    <div class="timeline-info">
-                                        <span class="timeline-session">ddd-333-eee</span>
-                                        <span class="timeline-agent">Claude Code</span>
-                                    </div>
-                                    <div class="timeline-cost">$0.95</div>
-                                    <div class="timeline-level normal">中</div>
-                                </div>
-                                <div class="timeline-row high" onclick="switchView('sessions')">
-                                    <div class="timeline-time">16:20</div>
-                                    <div class="timeline-dot high"></div>
-                                    <div class="timeline-info">
-                                        <span class="timeline-session">fff-444-ggg</span>
-                                        <span class="timeline-agent">Claude Code</span>
-                                        <span class="timeline-tag">Opus 模型</span>
-                                    </div>
-                                    <div class="timeline-cost">$3.20</div>
-                                    <div class="timeline-level high">🔴 高</div>
-                                </div>
+                                <!-- Timeline rows will be dynamically rendered by JavaScript -->
                             </div>
                             <!-- 提示 -->
                             <div style="text-align: center; font-size: 11px; color: var(--accent-blue); margin-top: 12px;">
@@ -2866,49 +2687,10 @@
                             <h3 class="chart-title">成本归因 Top 10（点击跳转 Session）</h3>
                         </div>
                         <div class="cost-ranking">
-                            <div class="cost-rank-item" onclick="switchView('sessions')">
-                                <div class="cost-rank-position top1">1</div>
-                                <div class="cost-rank-info">
-                                    <div class="cost-rank-session">Session: abc-123-def</div>
-                                    <div class="cost-rank-meta">Claude Code | 45 工具调用 | 3 Subagent</div>
-                                </div>
-                                <div class="cost-rank-value">$2.35</div>
-                            </div>
-                            <div class="cost-rank-item" onclick="switchView('sessions')">
-                                <div class="cost-rank-position top2">2</div>
-                                <div class="cost-rank-info">
-                                    <div class="cost-rank-session">Session: ghi-789-jkl</div>
-                                    <div class="cost-rank-meta">Claude Code | 32 工具调用</div>
-                                </div>
-                                <div class="cost-rank-value">$1.85</div>
-                            </div>
-                            <div class="cost-rank-item" onclick="switchView('sessions')">
-                                <div class="cost-rank-position top3">3</div>
-                                <div class="cost-rank-info">
-                                    <div class="cost-rank-session">Session: mno-456-pqr</div>
-                                    <div class="cost-rank-meta">Codex | 28 工具调用</div>
-                                </div>
-                                <div class="cost-rank-value">$1.20</div>
-                            </div>
-                            <div class="cost-rank-item">
-                                <div class="cost-rank-position other">4</div>
-                                <div class="cost-rank-info">
-                                    <div class="cost-rank-session">Session: xyz-111-aaa</div>
-                                    <div class="cost-rank-meta">Copilot CLI | 18 工具调用</div>
-                                </div>
-                                <div class="cost-rank-value">$0.85</div>
-                            </div>
-                            <div class="cost-rank-item">
-                                <div class="cost-rank-position other">5</div>
-                                <div class="cost-rank-info">
-                                    <div class="cost-rank-session">Session: bbb-222-ccc</div>
-                                    <div class="cost-rank-meta">Claude Code | 15 工具调用</div>
-                                </div>
-                                <div class="cost-rank-value">$0.72</div>
-                            </div>
+                            <!-- Cost rank items will be dynamically rendered by JavaScript -->
                         </div>
                         <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
-                            Top 5 占总成本 55% | 共 105 个 Sessions
+                            Cost ranking will be loaded dynamically
                         </div>
                     </div>
 
@@ -3204,11 +2986,11 @@
                 item.onclick = () => loadSessionDetail(s.session_id);
                 item.innerHTML = `
                     <div class="session-header">
-                        <span class="session-id">${s.session_id?.substring(0,12) || '-'}</span>
+                        <span class="session-id">${s.project || s.session_id?.substring(0,8) || '-'}</span>
                         <span class="session-status status-${s.status}">${s.status_text}</span>
                     </div>
                     <div class="session-meta">
-                        <span>${s.agent_source}</span>
+                        <span class="session-id-short">${s.session_id_short || s.session_id?.substring(0,8)}</span>
                         <span>${s.start_time}</span>
                     </div>
                     <div class="session-stats">
@@ -3231,18 +3013,19 @@
             // Find and activate the matching session item
             const items = document.querySelectorAll('.session-item');
             items.forEach(item => {
-                const id = item.querySelector('.session-id')?.textContent;
-                if (id && data.session_id?.startsWith(id)) {
+                const idShort = item.querySelector('.session-id-short')?.textContent;
+                if (idShort && data.session_id?.startsWith(idShort)) {
                     item.classList.add('active');
                 }
             });
 
             const panel = document.querySelector('.session-detail-panel');
             const header = panel.querySelector('.session-detail-header');
-            header.querySelector('.session-title-row h2').textContent = data.session_id?.substring(0,16) + '...' || '-';
+            // Show project name as title, session_id as secondary
+            header.querySelector('.session-title-row h2').textContent = data.project || data.session_id?.substring(0,12) || '-';
 
             const infoItems = header.querySelectorAll('.info-item .info-value');
-            infoItems[0].textContent = data.agent_source || 'Claude Code';
+            infoItems[0].textContent = data.project || '-';
             infoItems[1].textContent = data.duration || '-';
             infoItems[2].textContent = data.total_cost || '$0.00';
 
@@ -3316,7 +3099,7 @@
                 item.innerHTML = `
                     <div class="problem-type">
                         <span class="severity-badge severity-${p.severity}">${p.severity}</span>
-                        ${p.problem_type}
+                        ${p.problem_title || p.problem_type}
                     </div>
                     <div class="problem-meta">Session: ${p.session_id_short} | ${p.agent_source}</div>
                     <div class="problem-time">${p.time}</div>`;
@@ -3369,15 +3152,23 @@
         }
 
         async function loadProblemEvents(problemId, problemType) {
-            // For now, use the first anomaly from cache
+            // Find problem from cache
             const a = anomaliesCache.find(p => p.problem_id === problemId);
             if (!a) return;
 
+            // Parse extra field (can be JSON string or object)
             let extra = {};
-            try { if (a.extra) extra = JSON.parse(a.extra); } catch {}
+            if (a.extra) {
+                try {
+                    extra = typeof a.extra === 'string' ? JSON.parse(a.extra) : a.extra;
+                } catch {}
+            }
 
-            // Get session events for timeline
-            const eventsSql = `SELECT ts, event_type, tool_name FROM apm_hook_events WHERE session_id = '${a.session_id}' ORDER BY ts`;
+            // Get session events for timeline (use full session_id)
+            const sessionId = a.session_id;
+            if (!sessionId) return;
+
+            const eventsSql = `SELECT ts, event_type, tool_name FROM apm_hook_events WHERE session_id = '${sessionId}' ORDER BY ts`;
             const eventsData = await query(eventsSql);
             const events = parseResult(eventsData);
 
@@ -3482,6 +3273,7 @@
         }
 
         // ==================== Helper Functions ====================
+        function getAnomalyHelp(type, extra) {
             const map = {
                 'slow_tool': {
                     result: `工具 ${extra.tool_name || ''} 执行时间过长，可能由于权限确认延迟、网络请求慢或长时间运行的任务导致。`,
