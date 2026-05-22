@@ -60,7 +60,7 @@ func formatProblemsResponse(rawData []byte) ([]byte, error) {
 		sessionID := row[1].(string)
 		anomalyType := row[2].(string)
 		severity := row[3].(string)
-		description := row[4].(string)
+		_ = row[4].(string) // description - not used yet
 
 		// Format time to "2024-01-15 14:32:18"
 		t, err := time.Parse(time.RFC3339, ts)
