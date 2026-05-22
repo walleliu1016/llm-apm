@@ -13,25 +13,32 @@ import (
 
 	"github.com/akke/llm-apm/server/internal/analysis"
 	"github.com/akke/llm-apm/server/internal/broadcaster"
+	"github.com/akke/llm-apm/server/internal/transcript"
 	"github.com/akke/llm-apm/server/internal/turn"
 )
 
 // Server holds handler dependencies.
 type Server struct {
-	greptimeDBHost   string
-	greptimeHTTPPort int
-	httpClient       *http.Client
-	logger           *slog.Logger
-	transcriptWatcher interface{} // Will be TranscriptWatcher
-	broadcaster      *broadcaster.Broadcaster
-	analysisEngine   *analysis.Engine
-	turnTracker      *turn.Tracker
-	pendingTools     sync.Map // map[string]time.Time - tracks tool execution start times (key: session_id_tool_use_id)
+	greptimeDBHost     string
+	greptimeHTTPPort   int
+	httpClient         *http.Client
+	logger             *slog.Logger
+	transcriptWatcher  *transcript.Watcher
+	broadcaster        *broadcaster.Broadcaster
+	analysisEngine     *analysis.Engine
+	turnTracker        *turn.Tracker
+	pendingTools       sync.Map // map[string]time.Time - tracks tool execution start times (key: session_id_tool_use_id)
+	watchedSessions    sync.Map // map[string]struct{} - tracks sessions already being watched
 }
 
 // SetTurnTracker sets the turn tracker for the server.
 func (s *Server) SetTurnTracker(tracker *turn.Tracker) {
 	s.turnTracker = tracker
+}
+
+// SetTranscriptWatcher sets the transcript watcher for the server.
+func (s *Server) SetTranscriptWatcher(watcher *transcript.Watcher) {
+	s.transcriptWatcher = watcher
 }
 
 // HookPayload represents a hook event from Claude Code.
@@ -97,6 +104,13 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) insertHookEvent(p HookPayload, agentSource, toolInput, toolResult string, errorFlag bool) {
 	now := time.Now().UnixMilli()
+
+	// Start transcript watcher on first hook for this session
+	if s.transcriptWatcher != nil && p.TranscriptPath != "" {
+		if _, loaded := s.watchedSessions.LoadOrStore(p.SessionID, struct{}{}); !loaded {
+			s.transcriptWatcher.Watch(p.SessionID, p.TranscriptPath)
+		}
+	}
 
 	// Track tool execution time: record PreToolUse start time
 	if p.HookEventName == "PreToolUse" && p.ToolUseID != "" {

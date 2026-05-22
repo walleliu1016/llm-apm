@@ -22,8 +22,19 @@ func main() {
 	cfg := config.Load()
 
 	// Setup logger
+	var logLevel slog.Level
+	switch cfg.LogLevel {
+	case "debug":
+		logLevel = slog.LevelDebug
+	case "warn":
+		logLevel = slog.LevelWarn
+	case "error":
+		logLevel = slog.LevelError
+	default:
+		logLevel = slog.LevelInfo
+	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: logLevel,
 	}))
 
 	logger.Info("starting llm-apm-server",
@@ -57,6 +68,7 @@ func main() {
 
 	// Create transcript watcher
 	watcher := transcript.NewWatcher("127.0.0.1", cfg.GreptimeHTTPPort, logger)
+	srv.SetTranscriptWatcher(watcher)
 
 	// Setup HTTP routes
 	mux := http.NewServeMux()

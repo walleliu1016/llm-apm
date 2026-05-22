@@ -21,6 +21,7 @@
             --accent-yellow: #ffc107;
             --accent-green: #28a745;
             --accent-blue: #4a90d9;
+            --accent-purple: #9b59b6;
             --border: #2a2a4a;
         }
 
@@ -715,7 +716,41 @@
         .tree-node-time {
             color: var(--text-secondary);
             font-size: 11px;
+        }
+
+        .tree-node-duration {
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .duration-badge {
+            color: var(--text-secondary);
+            font-size: 11px;
             margin-left: auto;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+        }
+
+        .duration-badge.slow {
+            color: var(--accent);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .duration-badge.medium {
+            color: var(--accent-yellow);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .tool-info {
+            color: var(--text-primary);
+            font-size: 11px;
+        }
+
+        .tool-info[title] {
+            cursor: help;
         }
 
         .tree-node-children {
@@ -766,6 +801,14 @@
             border-radius: 3px;
             font-size: 10px;
             color: white;
+        }
+
+        .tree-child.user-input {
+            color: var(--text-primary);
+        }
+
+        .tree-child.user-input .user-icon {
+            margin-right: 6px;
         }
 
         /* Subagent styles */
@@ -3212,9 +3255,14 @@
         }
 
         async function loadSessionEvents(sessionId) {
-            const eventsSql = `SELECT ts, event_type, tool_name, tool_input, tool_result, error_flag FROM apm_hook_events WHERE session_id = '${sessionId}' ORDER BY ts`;
-            const data = await query(eventsSql);
-            const events = parseResult(data);
+            // Load both events and messages (include agent fields for subagent support)
+            const eventsSql = `SELECT ts, event_type, tool_name, tool_input, tool_result, error_flag, tool_use_id, agent_id, agent_depth FROM apm_hook_events WHERE session_id = '${sessionId}' ORDER BY ts`;
+            const messagesSql = `SELECT ts, message_type, msg_role, content, model, tool_name, input_tokens, output_tokens, cache_read_tokens FROM apm_messages WHERE session_id = '${sessionId}' ORDER BY ts`;
+
+            const eventsData = await query(eventsSql);
+            const events = parseResult(eventsData);
+            const messagesData = await query(messagesSql);
+            const messages = parseResult(messagesData);
 
             const panel = document.querySelector('.session-detail-panel');
             if (!events?.length) {
@@ -3222,6 +3270,20 @@
                 panel.querySelector('.tool-tree').innerHTML = '';
                 return;
             }
+
+            // Build tool duration map (PreToolUse -> PostToolUse)
+            const toolStartTimes = {};
+            const toolDurations = {};
+            events.forEach(e => {
+                if (e.event_type === 'PreToolUse' && e.tool_use_id) {
+                    toolStartTimes[e.tool_use_id] = e.ts;
+                } else if ((e.event_type === 'PostToolUse' || e.event_type === 'PostToolUseFailure') && e.tool_use_id) {
+                    const startTime = toolStartTimes[e.tool_use_id];
+                    if (startTime) {
+                        toolDurations[e.tool_use_id] = e.ts - startTime;
+                    }
+                }
+            });
 
             const start = events[0].ts, end = events[events.length-1].ts, dur = end - start;
 
@@ -3238,7 +3300,7 @@
 
             // Update tool-tree
             const toolTree = panel.querySelector('.tool-tree');
-            toolTree.innerHTML = buildTurnNodesHtml(events);
+            toolTree.innerHTML = buildTurnNodesHtml(events, messages, toolDurations);
         }
 
         // Task 12: Render Functions for Problems
@@ -3496,102 +3558,162 @@
             return `<span>${fmtTime(start)}</span><span>${fmtTime(start + dur/3)}</span><span>${fmtTime(start + dur*2/3)}</span><span>${fmtTime(end)}</span>`;
         }
 
-        function buildTurnNodesHtml(events) {
+        function buildTurnNodesHtml(events, messages, toolDurations) {
             let html = '';
             let turnNum = 1;
             let turnEvents = [];
 
             events.forEach((e, idx) => {
                 if (e.event_type === 'UserPromptSubmit' && turnEvents.length > 0) {
-                    html += buildTurnNodeHtml(turnNum, turnEvents);
+                    html += buildTurnNodeHtml(turnNum, turnEvents, messages, toolDurations);
                     turnNum++;
                     turnEvents = [];
                 }
                 turnEvents.push({...e, idx});
             });
-            if (turnEvents.length > 0) html += buildTurnNodeHtml(turnNum, turnEvents);
+            if (turnEvents.length > 0) html += buildTurnNodeHtml(turnNum, turnEvents, messages, toolDurations);
             return html;
         }
 
-        function buildTurnNodeHtml(turnNum, events) {
-            const startTime = events[0] ? fmtTime(events[0].ts) : '';
-            let promptText = '开始';
-            if (events[0]?.event_type === 'UserPromptSubmit' && events[0]?.tool_input) {
-                try {
-                    const input = JSON.parse(events[0].tool_input);
-                    promptText = input.prompt?.substring(0, 30) || '用户请求';
-                } catch {}
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        }
+
+        // Format duration in milliseconds to human-readable string
+        function fmtDurationMs(ms) {
+            if (!ms || ms <= 0) return '-';
+            if (ms < 1000) return ms + 'ms';
+            const sec = Math.floor(ms / 1000);
+            if (sec < 60) return sec + 's ' + (ms % 1000) + 'ms';
+            return Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
+        }
+
+        function buildTurnNodeHtml(turnNum, events, messages, toolDurations) {
+            const startTime = events[0] ? events[0].ts : 0;
+            const endTime = events[events.length - 1] ? events[events.length - 1].ts : 0;
+            const turnDuration = endTime - startTime;
+
+            // Find user prompt event
+            const userEvent = events.find(e => e.event_type === 'UserPromptSubmit');
+            const userEventTime = userEvent ? fmtTime(userEvent.ts) : startTime;
+
+            // Find matching message for this turn (LLM response)
+            let llmMessage = null;
+            if (userEvent && messages && messages.length > 0) {
+                // Find the assistant message closest after the user prompt
+                llmMessage = messages.find(m => m.ts >= userEvent.ts && m.msg_role === 'assistant');
             }
 
             let childrenHtml = '';
             events.forEach(e => {
                 const isTool = e.tool_name && e.tool_name !== '';
+                const isSubagent = e.agent_depth > 0;
 
                 if (isTool) {
-                    const toolColor = e.tool_name === 'Bash' ? 'var(--accent)' :
+                    const toolColor = e.error_flag ? 'var(--accent)' :
+                                      e.tool_name === 'Bash' ? '#f97316' :
                                       e.tool_name === 'Read' ? 'var(--accent-blue)' :
                                       e.tool_name === 'Edit' ? 'var(--accent-green)' :
-                                      e.tool_name === 'Write' ? 'var(--accent-yellow)' : 'var(--text-primary)';
+                                      e.tool_name === 'Write' ? 'var(--accent-yellow)' :
+                                      e.tool_name === 'Skill' ? 'var(--accent-purple)' : 'var(--text-primary)';
                     let shortInfo = '';
+                    let fullInfo = '';
+                    const maxLen = 100; // Only truncate if longer than this
                     if (e.tool_input) {
                         try {
                             const input = JSON.parse(e.tool_input);
-                            if (input.file_path) shortInfo = input.file_path.split('/').pop();
-                            if (input.command) shortInfo = input.command.substring(0, 20);
+                            // Special handling for Skill: show skill name
+                            if (e.tool_name === 'Skill' && input.skill) {
+                                shortInfo = input.skill.split(':').pop() || input.skill;
+                                fullInfo = input.skill;
+                            } else if (input.file_path) {
+                                shortInfo = input.file_path.split('/').pop();
+                                fullInfo = input.file_path;
+                            } else if (input.command) {
+                                fullInfo = input.command;
+                                // Only truncate if very long
+                                shortInfo = input.command.length > maxLen
+                                    ? input.command.substring(0, maxLen) + '...'
+                                    : input.command;
+                            }
                         } catch {}
                     }
 
+                    // Get tool duration from toolDurations map
+                    const toolDuration = toolDurations[e.tool_use_id] || 0;
+                    const durationStr = fmtDurationMs(toolDuration);
+                    const durationClass = toolDuration > 30000 ? 'slow' : toolDuration > 10000 ? 'medium' : '';
+
+                    // Subagent tools show with subagent indicator
+                    if (isSubagent) {
+                        childrenHtml += `
+                            <div class="tree-child tool-call subagent-call ${e.error_flag ? 'has-error' : ''}" onclick="toggleToolDetail(this, 'tool-${e.idx}')">
+                                <span class="subagent-icon">SUB</span>
+                                <span style="color: ${toolColor};">${e.tool_name}</span>
+                                ${shortInfo ? '<span class="tool-info" title="' + escapeHtml(fullInfo) + '">' + escapeHtml(shortInfo) + '</span>' : ''}
+                                <span class="duration-badge ${durationClass}">${durationStr}</span>
+                            </div>`;
+                    } else {
+                        childrenHtml += `
+                            <div class="tree-child tool-call ${e.error_flag ? 'has-error' : ''}" onclick="toggleToolDetail(this, 'tool-${e.idx}')">
+                                <span class="tool-icon">TOOL</span>
+                                <span style="color: ${toolColor};">${e.tool_name}</span>
+                                ${shortInfo ? '<span class="tool-info" title="' + escapeHtml(fullInfo) + '">' + escapeHtml(shortInfo) + '</span>' : ''}
+                                <span class="duration-badge ${durationClass}">${durationStr}</span>
+                            </div>`;
+                    }
+                    // Detail panel (same for both)
                     childrenHtml += `
-                        <div class="tree-child tool-call ${e.error_flag ? 'has-error' : ''}" onclick="toggleToolDetail(this, 'tool-${e.idx}')">
-                            <span class="tool-icon">TOOL</span>
-                            <span style="color: ${e.error_flag ? 'var(--accent)' : toolColor};">${e.tool_name}</span>
-                            ${shortInfo ? '<span>' + shortInfo + '</span>' : ''}
-                            <span style="color: var(--text-secondary);">(${fmtTime(e.ts)})</span>
-                        </div>
                         <div class="tool-detail" id="detail-tool-${e.idx}">
                             <div class="tool-detail-header">
-                                <span class="tool-detail-title">${e.tool_name}: ${shortInfo || '-'}</span>
+                                <span class="tool-detail-title">${isSubagent ? '[Subagent] ' : ''}${e.tool_name}: ${shortInfo || '-'}</span>
                                 <span class="tool-detail-status ${e.error_flag ? 'error' : 'success'}">${e.error_flag ? '错误' : '成功'}</span>
                             </div>
-                            <div class="tool-detail-row"><span class="tool-detail-label">执行时间</span><span class="tool-detail-value">${fmtTime(e.ts)}</span></div>
+                            ${isSubagent ? '<div class="tool-detail-row"><span class="tool-detail-label">Subagent ID</span><span class="tool-detail-value">' + (e.agent_id || '-') + '</span></div>' : ''}
+                            <div class="tool-detail-row"><span class="tool-detail-label">执行耗时</span><span class="tool-detail-value ${durationClass}">${durationStr}</span></div>
+                            <div class="tool-detail-row"><span class="tool-detail-label">开始时间</span><span class="tool-detail-value">${fmtTime(e.ts)}</span></div>
                             ${e.tool_input ? '<div class="tool-detail-section-title">输入参数</div><div class="tool-detail-input">' + (typeof e.tool_input === 'string' ? e.tool_input.substring(0,2000) : JSON.stringify(e.tool_input,null,2).substring(0,2000)) + '</div>' : ''}
                             ${e.tool_result ? '<div class="tool-detail-section-title">输出结果</div><div class="tool-detail-output">' + (typeof e.tool_result === 'string' ? e.tool_result.substring(0,2000) : JSON.stringify(e.tool_result,null,2).substring(0,2000)) + '</div>' : ''}
                         </div>`;
                 } else if (e.event_type === 'UserPromptSubmit') {
-                    let prompt = '';
-                    try { const input = JSON.parse(e.tool_input || '{}'); prompt = input.prompt?.substring(0, 100) || ''; } catch {}
+                    // LLM Call - show with message data if available
+                    const model = llmMessage?.model || 'unknown';
+                    const inputTokens = llmMessage?.input_tokens || 0;
+                    const outputTokens = llmMessage?.output_tokens || 0;
+                    const cacheRead = llmMessage?.cache_read_tokens || 0;
+                    const contentPreview = llmMessage?.content ? llmMessage.content.substring(0, 100) : '';
+
+                    // Calculate cost (approximate)
+                    const cost = ((inputTokens * 0.003 + outputTokens * 0.015) / 1000).toFixed(2);
 
                     childrenHtml += `
                         <div class="tree-child llm-call" onclick="toggleLlmDetail(this, 'llm-${e.idx}')">
                             <span class="llm-icon">LLM</span>
-                            <span>claude-sonnet-4</span>
-                            <span class="token-badge">in: - | out: -</span>
-                            <span class="cost-badge">$0.00</span>
+                            <span>${model}</span>
+                            <span class="token-badge">in: ${inputTokens} | out: ${outputTokens}</span>
+                            <span class="cost-badge">$${cost}</span>
                             <span style="color: var(--text-secondary);">(${fmtTime(e.ts)})</span>
                         </div>
                         <div class="llm-detail" id="detail-llm-${e.idx}">
                             <div class="llm-detail-header">
-                                <div class="llm-detail-title">🤖 LLM API 调用 <span class="model-name">claude-sonnet-4</span></div>
+                                <div class="llm-detail-title">🤖 LLM API 调用 <span class="model-name">${model}</span></div>
                                 <span class="tool-detail-status success">成功</span>
                             </div>
                             <div class="llm-detail-stats">
-                                <div class="llm-stat-item"><div class="llm-stat-label">输入 Tokens</div><div class="llm-stat-value input">-</div></div>
-                                <div class="llm-stat-item"><div class="llm-stat-label">输出 Tokens</div><div class="llm-stat-value output">-</div></div>
-                                <div class="llm-stat-item"><div class="llm-stat-label">缓存读取</div><div class="llm-stat-value cache">-</div></div>
-                                <div class="llm-stat-item"><div class="llm-stat-label">预估成本</div><div class="llm-stat-value cost">$0.00</div></div>
+                                <div class="llm-stat-item"><div class="llm-stat-label">输入 Tokens</div><div class="llm-stat-value input">${inputTokens}</div></div>
+                                <div class="llm-stat-item"><div class="llm-stat-label">输出 Tokens</div><div class="llm-stat-value output">${outputTokens}</div></div>
+                                <div class="llm-stat-item"><div class="llm-stat-label">缓存读取</div><div class="llm-stat-value cache">${cacheRead}</div></div>
+                                <div class="llm-stat-item"><div class="llm-stat-label">预估成本</div><div class="llm-stat-value cost">$${cost}</div></div>
                             </div>
                             <div class="llm-timing-row">
-                                <div class="llm-timing-item"><div class="llm-timing-label">TTFT (首字节)</div><div class="llm-timing-value">-</div></div>
-                                <div class="llm-timing-item"><div class="llm-timing-label">总耗时</div><div class="llm-timing-value">-</div></div>
-                                <div class="llm-timing-item"><div class="llm-timing-label">生成速度</div><div class="llm-timing-value">-</div></div>
-                            </div>
-                            <div class="llm-detail-section">
-                                <div class="llm-detail-section-title">用户提示</div>
-                                <div class="llm-prompt-preview">${prompt || '用户输入'}</div>
+                                <div class="llm-timing-item"><div class="llm-timing-label">TTFT</div><div class="llm-timing-value">${llmMessage ? '-' : '无数据'}</div></div>
+                                <div class="llm-timing-item"><div class="llm-timing-label">总耗时</div><div class="llm-timing-value">${llmMessage ? '-' : '无数据'}</div></div>
                             </div>
                             <div class="llm-detail-section">
                                 <div class="llm-detail-section-title">模型响应</div>
-                                <div class="llm-response-preview">-</div>
+                                <div class="llm-response-preview">${contentPreview || '无响应数据'}</div>
                             </div>
                         </div>`;
                 }
@@ -3601,8 +3723,9 @@
                 <div class="tree-node expanded" data-turn="${turnNum}">
                     <div class="tree-node-header" onclick="toggleTreeNode(this.parentElement)">
                         <span class="tree-expand-btn">▼</span>
-                        <span class="tree-node-name">Turn ${turnNum}: ${promptText}</span>
-                        <span class="tree-node-time">${startTime}</span>
+                        <span class="tree-node-name">Turn ${turnNum}</span>
+                        <span class="tree-node-duration">${fmtDurationMs(turnDuration)}</span>
+                        <span class="tree-node-time">${fmtTime(startTime)}</span>
                     </div>
                     <div class="tree-node-children">${childrenHtml}</div>
                 </div>`;

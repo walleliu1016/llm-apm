@@ -145,11 +145,12 @@ func (w *Watcher) tailFile(ctx context.Context, sessionID, filePath string, seen
 
 // TranscriptEntry matches Claude Code JSONL format.
 type TranscriptEntry struct {
-	SessionID string         `json:"sessionId"`
-	Type      string         `json:"type"`
-	UUID      string         `json:"uuid"`
-	Message   *TranscriptMsg `json:"message"`
-	CWD       string         `json:"cwd"`
+	SessionID  string         `json:"sessionId"`
+	Type       string         `json:"type"`
+	UUID       string         `json:"uuid"`
+	Timestamp  string         `json:"timestamp"`
+	Message    *TranscriptMsg `json:"message"`
+	CWD        string         `json:"cwd"`
 }
 
 type TranscriptMsg struct {
@@ -179,6 +180,20 @@ func (w *Watcher) processLine(sessionID, line string, seen map[string]struct{}) 
 		return
 	}
 
+	// Parse timestamp (format: "2026-05-22T10:00:00.000Z" or ISO8601)
+	var ts int64
+	if entry.Timestamp != "" {
+		if t, err := time.Parse(time.RFC3339Nano, entry.Timestamp); err == nil {
+			ts = t.UnixMilli()
+		} else if t, err := time.Parse("2006-01-02T15:04:05.000Z", entry.Timestamp); err == nil {
+			ts = t.UnixMilli()
+		} else {
+			ts = time.Now().UnixMilli()
+		}
+	} else {
+		ts = time.Now().UnixMilli()
+	}
+
 	role := entry.Message.Role
 	if role == "human" {
 		role = "user"
@@ -188,7 +203,7 @@ func (w *Watcher) processLine(sessionID, line string, seen map[string]struct{}) 
 	var content string
 	if err := json.Unmarshal(entry.Message.Content, &content); err == nil {
 		if content != "" {
-			w.insertMessage(sessionID, role, role, truncate(content, 32768),
+			w.insertMessage(ts, sessionID, role, role, truncate(content, 32768),
 				entry.Message.Model, "", "", entry.Message.Usage)
 		}
 		return
@@ -200,19 +215,26 @@ func (w *Watcher) processLine(sessionID, line string, seen map[string]struct{}) 
 		return
 	}
 
-	for _, b := range blocks {
+	// For content blocks, attach usage to the first text block (if any)
+	usage := entry.Message.Usage
+	for i, b := range blocks {
 		switch b.Type {
 		case "text":
 			if b.Text != "" {
-				w.insertMessage(sessionID, "text", role, truncate(b.Text, 32768),
-					entry.Message.Model, "", "", nil)
+				// Only first text block gets usage info
+				msgUsage := usage
+				if i > 0 {
+					msgUsage = nil
+				}
+				w.insertMessage(ts, sessionID, "text", role, truncate(b.Text, 32768),
+					entry.Message.Model, "", "", msgUsage)
 			}
 		case "tool_use":
 			inputStr := truncate(string(b.Input), 2048)
-			w.insertMessage(sessionID, "tool_use", role, inputStr,
+			w.insertMessage(ts, sessionID, "tool_use", role, inputStr,
 				entry.Message.Model, b.Name, b.ID, nil)
 		case "tool_result":
-			w.insertMessage(sessionID, "tool_result", role,
+			w.insertMessage(ts, sessionID, "tool_result", role,
 				truncate(extractToolResultContent(b.Content), 4096),
 				entry.Message.Model, "", b.ToolUseID, nil)
 		}
@@ -251,27 +273,25 @@ func extractToolResultContent(raw json.RawMessage) string {
 	return string(raw)
 }
 
-func (w *Watcher) insertMessage(sessionID, messageType, role, content, model,
+func (w *Watcher) insertMessage(ts int64, sessionID, messageType, role, content, model,
 	toolName, toolUseID string, usage *MsgUsage) {
-
-	now := time.Now().UnixMilli()
 
 	var sql string
 	if usage != nil {
 		sql = fmt.Sprintf(
 			"INSERT INTO apm_messages "+
-				"(ts, session_id, message_type, role, content, model, tool_name, tool_use_id, "+
+				"(ts, session_id, message_type, msg_role, content, model, tool_name, tool_use_id, "+
 				"input_tokens, output_tokens, cache_read_tokens, cache_creation_tokens) "+
 				"VALUES (%d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, %d, %d)",
-			now, escapeSQL(sessionID), escapeSQL(messageType), escapeSQL(role),
+			ts, escapeSQL(sessionID), escapeSQL(messageType), escapeSQL(role),
 			escapeSQL(content), escapeSQL(model), escapeSQL(toolName), escapeSQL(toolUseID),
 			usage.InputTokens, usage.OutputTokens, usage.CacheReadTokens, usage.CacheCreationTokens)
 	} else {
 		sql = fmt.Sprintf(
 			"INSERT INTO apm_messages "+
-				"(ts, session_id, message_type, role, content, model, tool_name, tool_use_id) "+
+				"(ts, session_id, message_type, msg_role, content, model, tool_name, tool_use_id) "+
 				"VALUES (%d, '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-			now, escapeSQL(sessionID), escapeSQL(messageType), escapeSQL(role),
+			ts, escapeSQL(sessionID), escapeSQL(messageType), escapeSQL(role),
 			escapeSQL(content), escapeSQL(model), escapeSQL(toolName), escapeSQL(toolUseID))
 	}
 
