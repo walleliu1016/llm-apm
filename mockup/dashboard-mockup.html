@@ -1,0 +1,3297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM-APM Dashboard Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #0f3460;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --accent: #e94560;
+            --accent-yellow: #ffc107;
+            --accent-green: #28a745;
+            --accent-blue: #4a90d9;
+            --border: #2a2a4a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Notification Area */
+        .notification-area {
+            position: relative;
+        }
+
+        .notification-badge {
+            background: var(--bg-card);
+            color: var(--accent);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid var(--accent);
+        }
+
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 320px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 8px;
+            display: none;
+            z-index: 100;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+        }
+
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item.error {
+            border-left: 3px solid var(--accent);
+        }
+
+        .notification-item.warning {
+            border-left: 3px solid var(--accent-yellow);
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .notification-desc {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 4px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 24px;
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+        }
+
+        .view-container {
+            display: none;
+        }
+
+        .view-container.active {
+            display: block;
+        }
+
+        /* ==================== PROBLEMS VIEW ==================== */
+        .problems-layout {
+            display: flex;
+            gap: 24px;
+            height: 100%;
+        }
+
+        .problems-list {
+            width: 380px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow-y: auto;
+        }
+
+        .problems-header {
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .problems-header h2 {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .severity-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+
+        .severity-critical { background: var(--accent); }
+        .severity-high { background: #dc3545; }
+        .severity-medium { background: var(--accent-yellow); color: #333; }
+        .severity-low { background: var(--accent-green); }
+
+        .problem-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .problem-item:hover {
+            background: var(--bg-card);
+        }
+
+        .problem-item.active {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent);
+        }
+
+        .problem-type {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .problem-meta {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .problem-time {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow-y: auto;
+        }
+
+        .detail-header {
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-content {
+            padding: 16px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .inference-box {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .inference-title {
+            font-weight: 600;
+            color: var(--accent-yellow);
+            margin-bottom: 8px;
+        }
+
+        .inference-text {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .suggestion-box {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .suggestion-title {
+            font-weight: 600;
+            color: var(--accent-green);
+            margin-bottom: 8px;
+        }
+
+        /* Timeline */
+        .timeline {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .timeline-track {
+            height: 40px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            position: relative;
+            margin-top: 12px;
+        }
+
+        .timeline-event {
+            position: absolute;
+            top: 16px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .timeline-event:hover {
+            transform: scale(1.5);
+        }
+
+        .timeline-event.tool { background: var(--accent-blue); }
+        .timeline-event.error { background: var(--accent); }
+        .timeline-event.anomaly { background: var(--accent-yellow); }
+        .timeline-event.highlight {
+            box-shadow: 0 0 0 3px var(--accent-yellow);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1.5); }
+            50% { transform: scale(1.8); }
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        /* Context Preview */
+        .context-preview {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .context-label {
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+        }
+
+        .context-content {
+            color: var(--text-primary);
+            white-space: pre-wrap;
+        }
+
+        /* Related Events */
+        .related-events {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .related-event-badge {
+            background: var(--bg-card);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .related-event-badge.highlight {
+            border-left: 2px solid var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        /* Stats Cards */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .stat-value.error { color: var(--accent); }
+        .stat-value.warning { color: var(--accent-yellow); }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* ==================== SESSIONS VIEW ==================== */
+        .sessions-layout {
+            display: flex;
+            gap: 24px;
+            height: 100%;
+        }
+
+        .sessions-list {
+            width: 400px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow-y: auto;
+        }
+
+        .sessions-header {
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sessions-header h2 {
+            font-size: 16px;
+        }
+
+        .sessions-filter {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 4px 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .session-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .session-item:hover {
+            background: var(--bg-card);
+        }
+
+        .session-item.active {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .session-item.has-anomaly {
+            border-left: 3px solid var(--accent);
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .session-id {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .session-status {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .status-running { background: var(--accent-blue); }
+        .status-completed { background: var(--accent-green); }
+        .status-error { background: var(--accent); }
+
+        .session-meta {
+            color: var(--text-secondary);
+            font-size: 12px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .session-stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .session-stat {
+            background: var(--bg-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Session Detail */
+        .session-detail-panel {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow-y: auto;
+        }
+
+        .session-detail-header {
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .session-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .session-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .info-item {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .session-timeline-section {
+            padding: 16px;
+        }
+
+        .timeline-full {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .timeline-full-track {
+            height: 80px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .timeline-block {
+            position: absolute;
+            height: 20px;
+            top: 30px;
+            border-radius: 3px;
+            font-size: 10px;
+            color: white;
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .timeline-block.tool { background: var(--accent-blue); }
+        .timeline-block.thinking { background: #6b5b95; }
+        .timeline-block.error { background: var(--accent); }
+        .timeline-block.user { background: var(--accent-green); }
+
+        .timeline-tooltip {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .timeline-block:hover .timeline-tooltip {
+            opacity: 1;
+        }
+
+        /* Tool Call Tree */
+        .tool-tree-section {
+            padding: 16px;
+        }
+
+        .tool-tree {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .tree-node {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tree-node:last-child {
+            border-bottom: none;
+        }
+
+        .tree-node-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        .tree-node-header:hover {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        .tree-expand-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+            width: 16px;
+        }
+
+        .tree-node-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .tree-node-time {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-left: auto;
+        }
+
+        .tree-node-children {
+            margin-left: 24px;
+            padding-top: 8px;
+            display: none;
+        }
+
+        .tree-node.expanded > .tree-node-children {
+            display: block;
+        }
+
+        .tree-child {
+            padding: 6px 0;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 2px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tree-child:hover {
+            background: var(--bg-secondary);
+        }
+
+        .tree-child.has-error {
+            color: var(--accent);
+        }
+
+        .tree-child.llm-call {
+            color: var(--accent-green);
+        }
+
+        .tree-child.llm-call .llm-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            color: white;
+        }
+
+        .tree-child.tool-call .tool-icon {
+            background: var(--accent-blue);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            color: white;
+        }
+
+        /* Subagent styles */
+        .tree-child.subagent-call .subagent-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            color: white;
+        }
+
+        .subagent-container {
+            display: none;
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d1f4e 100%);
+            border: 1px solid #f5576c40;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0 8px 24px;
+        }
+
+        .subagent-container.show {
+            display: block;
+        }
+
+        .subagent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f5576c40;
+        }
+
+        .subagent-title {
+            font-weight: 600;
+            color: #f5576c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .subagent-id {
+            background: var(--bg-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .subagent-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .subagent-stat {
+            background: var(--bg-primary);
+            padding: 6px 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .subagent-stat-label {
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+
+        .subagent-stat-value {
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        /* Thinking round inside subagent */
+        .thinking-round {
+            margin: 8px 0;
+            border-left: 2px solid #667eea;
+            padding-left: 12px;
+        }
+
+        .thinking-round-header {
+            color: #667eea;
+            font-size: 11px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .thinking-round-tools {
+            margin-left: 16px;
+        }
+
+        .thinking-round-tool {
+            padding: 3px 0;
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .thinking-round-tool .mini-tool-icon {
+            background: var(--accent-blue);
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-size: 9px;
+            color: white;
+        }
+
+        .thinking-round-llm {
+            background: var(--bg-primary);
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+        }
+
+        .thinking-round-llm .mini-llm-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-size: 9px;
+            color: white;
+        }
+
+        .mini-token-badge {
+            font-size: 10px;
+            color: var(--accent-yellow);
+        }
+
+        .tree-child .token-badge {
+            background: var(--bg-primary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            color: var(--accent-yellow);
+        }
+
+        .tree-child .cost-badge {
+            font-size: 10px;
+            color: var(--accent-yellow);
+        }
+
+        /* Tool detail panel */
+        .tool-detail {
+            display: none;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0 8px 24px;
+            font-size: 12px;
+        }
+
+        .tool-detail.show {
+            display: block;
+        }
+
+        .tool-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .tool-detail-title {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .tool-detail-status {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .tool-detail-status.success {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .tool-detail-status.error {
+            background: var(--accent);
+            color: white;
+        }
+
+        .tool-detail-status.slow {
+            background: var(--accent-yellow);
+            color: #333;
+        }
+
+        .tool-detail-row {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .tool-detail-label {
+            color: var(--text-secondary);
+        }
+
+        .tool-detail-value {
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .tool-detail-input {
+            background: var(--bg-primary);
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .tool-detail-output {
+            background: var(--bg-primary);
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .tool-detail-section-title {
+            color: var(--accent-blue);
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        /* LLM detail panel */
+        .llm-detail {
+            display: none;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d1f4f 100%);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0 8px 24px;
+            font-size: 12px;
+            border: 1px solid #667eea40;
+        }
+
+        .llm-detail.show {
+            display: block;
+        }
+
+        .llm-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .llm-detail-title {
+            font-weight: 600;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .llm-detail-title .model-name {
+            background: var(--bg-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .llm-detail-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .llm-stat-item {
+            background: var(--bg-primary);
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .llm-stat-label {
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+
+        .llm-stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .llm-stat-value.input { color: #4a90d9; }
+        .llm-stat-value.output { color: var(--accent-green); }
+        .llm-stat-value.cache { color: var(--accent-yellow); }
+        .llm-stat-value.cost { color: var(--accent-yellow); }
+
+        .llm-detail-section {
+            margin-top: 12px;
+        }
+
+        .llm-detail-section-title {
+            color: #667eea;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .llm-prompt-preview {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 11px;
+            border-left: 3px solid #4a90d9;
+        }
+
+        .llm-response-preview {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 11px;
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .llm-timing-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .llm-timing-item {
+            background: var(--bg-primary);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .llm-timing-label {
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+
+        .llm-timing-value {
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        /* ==================== ANALYSIS VIEW ==================== */
+        .analysis-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .analysis-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .analysis-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .analysis-card-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .analysis-card-value {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .analysis-trend {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .trend-up { color: var(--accent-green); }
+        .trend-down { color: var(--accent); }
+
+        .analysis-chart-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .chart-card.span-2 {
+            grid-column: span 2;
+        }
+
+        .chart-card.span-3 {
+            grid-column: span 3;
+        }
+
+        .chart-header {
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+        }
+
+        .trend-chart {
+            background: var(--bg-card);
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .trend-bar {
+            width: 20px;
+            min-width: 15px;
+            border-radius: 2px 2px 0 0;
+            transition: height 0.2s;
+            cursor: pointer;
+        }
+
+        .trend-bar:hover {
+            opacity: 0.8;
+        }
+
+        /* Session Timeline Chart */
+        .timeline-chart {
+            background: var(--bg-card);
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .session-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 50px 20px 1fr 70px 50px;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            gap: 12px;
+        }
+
+        .timeline-row:hover {
+            background: var(--bg-primary);
+        }
+
+        .timeline-row.high {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, #f5576c10 100%);
+        }
+
+        .timeline-row.high:hover {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #f5576c20 100%);
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .timeline-dot.low { background: var(--accent-green); }
+        .timeline-dot.normal { background: var(--accent-blue); }
+        .timeline-dot.high { background: var(--accent-yellow); }
+        .timeline-dot.anomaly { background: var(--accent); }
+
+        .timeline-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .timeline-session {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .timeline-agent {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-tag {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .timeline-tag.anomaly {
+            background: var(--accent);
+            color: white;
+        }
+
+        .timeline-cost {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .timeline-level {
+            font-size: 11px;
+            text-align: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .timeline-level.low {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .timeline-level.normal {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .timeline-level.high {
+            background: var(--accent-yellow);
+            color: #333;
+        }
+
+        .timeline-level.anomaly {
+            background: var(--accent);
+            color: white;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        /* Tool Heatmap */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .heatmap-cell {
+            background: var(--bg-card);
+            padding: 12px 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .heatmap-cell:hover {
+            background: var(--bg-primary);
+        }
+
+        .heatmap-label {
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+
+        .heatmap-value {
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .heatmap-value.high { color: var(--accent); }
+        .heatmap-value.medium { color: var(--accent-yellow); }
+        .heatmap-value.low { color: var(--accent-green); }
+
+        /* Time Range Selector */
+        .time-range-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .time-range-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .time-range-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .time-btn {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .time-btn:hover {
+            background: var(--bg-primary);
+        }
+
+        .time-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .time-range-picker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .time-range-picker input {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* Model Distribution */
+        .model-dist-chart {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 160px;
+            margin-top: 16px;
+            padding-bottom: 30px;
+        }
+
+        .model-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 50px;
+        }
+
+        .model-bar-inner {
+            width: 40px;
+            border-radius: 4px 4px 0 0;
+            display: flex;
+            justify-content: center;
+            padding-top: 8px;
+        }
+
+        .model-bar-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .model-bar-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .model-bar-sonnet { background: linear-gradient(180deg, #667eea 0%, #4a5a9a 100%); }
+        .model-bar-opus { background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%); }
+        .model-bar-haiku { background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%); }
+        .model-bar-gpt { background: linear-gradient(180deg, #43e97b 0%, #38f9d7 100%); }
+
+        /* Cache Efficiency */
+        .cache-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .cache-stat {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .cache-stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .cache-stat-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .cache-stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .cache-stat.saved { color: var(--accent-green); }
+        .cache-stat.savings { color: var(--accent-yellow); }
+        .cache-stat.hit-rate { color: var(--accent-blue); }
+        .cache-stat.miss { color: var(--accent); }
+
+        /* Anomaly Distribution */
+        .anomaly-pie-chart {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 16px 0;
+        }
+
+        .anomaly-donut {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--accent) 0deg 90deg,
+                var(--accent-yellow) 90deg 180deg,
+                var(--accent-blue) 180deg 270deg,
+                var(--accent-green) 270deg 360deg
+            );
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .anomaly-donut-inner {
+            width: 60px;
+            height: 60px;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .anomaly-legends {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .anomaly-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .anomaly-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .anomaly-legend-dot.error { background: var(--accent); }
+        .anomaly-legend-dot.slow { background: var(--accent-yellow); }
+        .anomaly-legend-dot.cost { background: var(--accent-blue); }
+        .anomaly-legend-dot.other { background: var(--accent-green); }
+
+        /* Cost Attribution Top 10 */
+        .cost-ranking {
+            margin-top: 16px;
+        }
+
+        .cost-rank-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .cost-rank-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .cost-rank-position {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .cost-rank-position.top1 { background: var(--accent-yellow); color: #333; }
+        .cost-rank-position.top2 { background: #667eea; color: white; }
+        .cost-rank-position.top3 { background: var(--accent-blue); color: white; }
+        .cost-rank-position.other { background: var(--bg-secondary); color: var(--text-secondary); }
+
+        .cost-rank-info {
+            flex: 1;
+        }
+
+        .cost-rank-session {
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .cost-rank-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .cost-rank-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-yellow);
+        }
+
+        /* Subagent Cost */
+        .subagent-cost-bar {
+            display: flex;
+            height: 32px;
+            border-radius: 4px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+
+        .subagent-cost-main {
+            background: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+
+        .subagent-cost-sub {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+
+        /* TTFT Distribution */
+        .ttft-bars {
+            margin-top: 16px;
+        }
+
+        .ttft-bar-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .ttft-label {
+            width: 60px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .ttft-bar-container {
+            flex: 1;
+            height: 20px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .ttft-bar {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .ttft-bar.fast { background: var(--accent-green); }
+        .ttft-bar.normal { background: var(--accent-blue); }
+        .ttft-bar.slow { background: var(--accent-yellow); }
+        .ttft-bar.very-slow { background: var(--accent); }
+
+        .ttft-count {
+            width: 40px;
+            font-size: 12px;
+            text-align: right;
+            margin-left: 8px;
+        }
+
+        /* Turn Efficiency */
+        .turn-efficiency-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .turn-eff-card {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .turn-eff-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .turn-eff-value {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .turn-eff-desc {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-header {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .comparison-cell {
+            text-align: right;
+        }
+
+        .comparison-cell.label {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">LLM-APM</div>
+        <nav class="nav-tabs">
+            <button class="nav-tab" data-view="sessions">Sessions</button>
+            <button class="nav-tab active" data-view="problems">Problems</button>
+            <button class="nav-tab" data-view="analysis">Analysis</button>
+        </nav>
+        <div class="notification-area">
+            <span class="notification-badge" onclick="toggleNotifications()">🔴 2 条实时通知</span>
+            <div class="notification-dropdown" id="notification-dropdown">
+                <div class="notification-item error">
+                    <div class="notification-title">🔴 PostToolUseFailure: Read</div>
+                    <div class="notification-desc">file not found: /src/missing.ts</div>
+                    <div class="notification-actions">
+                        <button class="btn-small btn-primary" onclick="switchView('sessions')">定位</button>
+                        <button class="btn-small btn-secondary">忽略</button>
+                    </div>
+                </div>
+                <div class="notification-item warning">
+                    <div class="notification-title">🟡 slow_tool: Bash (32s)</div>
+                    <div class="notification-desc">npm install 执行时间过长</div>
+                    <div class="notification-actions">
+                        <button class="btn-small btn-primary" onclick="switchView('sessions')">定位</button>
+                        <button class="btn-small btn-secondary">忽略</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- ==================== SESSIONS VIEW ==================== -->
+        <div class="view-container" id="sessions-view">
+            <div class="sessions-layout">
+                <aside class="sessions-list">
+                    <div class="sessions-header">
+                        <h2>Session 列表</h2>
+                        <div class="sessions-filter">
+                            <button class="filter-btn active">全部</button>
+                            <button class="filter-btn">异常</button>
+                            <button class="filter-btn">运行中</button>
+                        </div>
+                    </div>
+
+                    <div class="session-item has-anomaly active">
+                        <div class="session-header">
+                            <span class="session-id">abc-123-def</span>
+                            <span class="session-status status-completed">已完成</span>
+                        </div>
+                        <div class="session-meta">
+                            <span>Claude Code</span>
+                            <span>2024-01-15 14:30</span>
+                        </div>
+                        <div class="session-stats">
+                            <span class="session-stat">🔴 2 异常</span>
+                            <span class="session-stat">45 工具调用</span>
+                            <span class="session-stat">$2.35</span>
+                            <span class="session-stat">12k tokens</span>
+                        </div>
+                    </div>
+
+                    <div class="session-item">
+                        <div class="session-header">
+                            <span class="session-id">ghi-789-jkl</span>
+                            <span class="session-status status-running">运行中</span>
+                        </div>
+                        <div class="session-meta">
+                            <span>Codex</span>
+                            <span>2024-01-15 15:00</span>
+                        </div>
+                        <div class="session-stats">
+                            <span class="session-stat">23 工具调用</span>
+                            <span class="session-stat">$1.20</span>
+                            <span class="session-stat">8k tokens</span>
+                        </div>
+                    </div>
+
+                    <div class="session-item">
+                        <div class="session-header">
+                            <span class="session-id">mno-456-pqr</span>
+                            <span class="session-status status-completed">已完成</span>
+                        </div>
+                        <div class="session-meta">
+                            <span>Copilot CLI</span>
+                            <span>2024-01-15 13:45</span>
+                        </div>
+                        <div class="session-stats">
+                            <span class="session-stat">18 工具调用</span>
+                            <span class="session-stat">$0.85</span>
+                            <span class="session-stat">5k tokens</span>
+                        </div>
+                    </div>
+                </aside>
+
+                <section class="session-detail-panel">
+                    <div class="session-detail-header">
+                        <div class="session-title-row">
+                            <h2>abc-123-def</h2>
+                            <span class="session-status status-completed">已完成</span>
+                        </div>
+                        <div class="session-info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Agent</div>
+                                <div class="info-value">Claude Code</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">持续时间</div>
+                                <div class="info-value">8min 32s</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">总成本</div>
+                                <div class="info-value" style="color: var(--accent-yellow);">$2.35</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="session-timeline-section">
+                        <h3 style="color: var(--text-secondary); margin-bottom: 12px;">执行时间线</h3>
+                        <div class="timeline-full">
+                            <div class="timeline-full-track">
+                                <div class="timeline-block user" style="left: 0%; width: 8%;">
+                                    <span class="timeline-tooltip">User: 实现登录功能</span>
+                                    User
+                                </div>
+                                <div class="timeline-block thinking" style="left: 9%; width: 5%;">
+                                    <span class="timeline-tooltip">Thinking: 分析需求</span>
+                                    思考
+                                </div>
+                                <div class="timeline-block tool" style="left: 15%; width: 10%;">
+                                    <span class="timeline-tooltip">Read: src/auth.ts</span>
+                                    Read
+                                </div>
+                                <div class="timeline-block tool" style="left: 26%; width: 8%;">
+                                    <span class="timeline-tooltip">Edit: 修改 auth.ts</span>
+                                    Edit
+                                </div>
+                                <div class="timeline-block error" style="left: 35%; width: 12%;">
+                                    <span class="timeline-tooltip">Bash: npm install (慢)</span>
+                                    🔴 Bash
+                                </div>
+                                <div class="timeline-block tool" style="left: 48%; width: 6%;">
+                                    <span class="timeline-tooltip">Write: test file</span>
+                                    Write
+                                </div>
+                                <div class="timeline-block thinking" style="left: 55%; width: 5%;">
+                                    <span class="timeline-tooltip">Thinking: 测试策略</span>
+                                    思考
+                                </div>
+                                <div class="timeline-block tool" style="left: 61%; width: 8%;">
+                                    <span class="timeline-tooltip">Bash: npm test</span>
+                                    Bash
+                                </div>
+                                <div class="timeline-block tool" style="left: 70%; width: 10%;">
+                                    <span class="timeline-tooltip">Read: test result</span>
+                                    Read
+                                </div>
+                                <div class="timeline-block user" style="left: 81%; width: 8%;">
+                                    <span class="timeline-tooltip">User: 看起来不错</span>
+                                    User
+                                </div>
+                                <div class="timeline-block tool" style="left: 90%; width: 8%;">
+                                    <span class="timeline-tooltip">Bash: git status</span>
+                                    Bash
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tool-tree-section">
+                        <h3 style="color: var(--text-secondary); margin-bottom: 12px;">执行树（LLM + 工具调用）</h3>
+                        <div class="tool-tree">
+                            <!-- Turn 1 -->
+                            <div class="tree-node expanded" data-turn="1">
+                                <div class="tree-node-header" onclick="toggleTreeNode(this.parentElement)">
+                                    <span class="tree-expand-btn">▼</span>
+                                    <span class="tree-node-name">Turn 1: 用户请求实现登录功能</span>
+                                    <span class="tree-node-time">14:30:00</span>
+                                </div>
+                                <div class="tree-node-children">
+                                    <!-- LLM Call 1 -->
+                                    <div class="tree-child llm-call" onclick="toggleLlmDetail(this, 'llm-1')">
+                                        <span class="llm-icon">LLM</span>
+                                        <span>claude-sonnet-4</span>
+                                        <span class="token-badge">in: 2.1k | out: 1.5k</span>
+                                        <span class="cost-badge">$0.08</span>
+                                        <span style="color: var(--text-secondary);">(3.2s)</span>
+                                    </div>
+                                    <div class="llm-detail" id="detail-llm-1">
+                                        <div class="llm-detail-header">
+                                            <div class="llm-detail-title">
+                                                🤖 LLM API 调用
+                                                <span class="model-name">claude-sonnet-4-20250514</span>
+                                            </div>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="llm-detail-stats">
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">输入 Tokens</div>
+                                                <div class="llm-stat-value input">2,148</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">输出 Tokens</div>
+                                                <div class="llm-stat-value output">1,523</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">缓存读取</div>
+                                                <div class="llm-stat-value cache">512</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">预估成本</div>
+                                                <div class="llm-stat-value cost">$0.08</div>
+                                            </div>
+                                        </div>
+                                        <div class="llm-timing-row">
+                                            <div class="llm-timing-item">
+                                                <div class="llm-timing-label">TTFT (首字节)</div>
+                                                <div class="llm-timing-value">0.8s</div>
+                                            </div>
+                                            <div class="llm-timing-item">
+                                                <div class="llm-timing-label">总耗时</div>
+                                                <div class="llm-timing-value">3.2s</div>
+                                            </div>
+                                            <div class="llm-timing-item">
+                                                <div class="llm-timing-label">生成速度</div>
+                                                <div class="llm-timing-value">476 tok/s</div>
+                                            </div>
+                                        </div>
+                                        <div class="llm-detail-section">
+                                            <div class="llm-detail-section-title">用户提示</div>
+                                            <div class="llm-prompt-preview">
+                                                请帮我实现一个登录功能，包括：
+                                                1. 用户名密码验证
+                                                2. JWT token 生成
+                                                3. 登录状态持久化
+                                                需要写测试代码。
+                                            </div>
+                                        </div>
+                                        <div class="llm-detail-section">
+                                            <div class="llm-detail-section-title">模型响应 (Thinking + 工具调用决策)</div>
+                                            <div class="llm-response-preview">
+                                                I'll implement the login functionality step by step:
+                                                1. First, let me read the existing auth module...
+                                                [调用工具: Read src/auth.ts]
+                                                [调用工具: Edit src/auth.ts]
+                                                [调用工具: Write tests/auth.test.ts]
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tool Calls under LLM 1 -->
+                                    <div class="tree-child tool-call" onclick="toggleToolDetail(this, 'read-auth')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent-blue);">Read</span>
+                                        <span>src/auth.ts</span>
+                                        <span style="color: var(--text-secondary);">(2s)</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-read-auth">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Read: src/auth.ts</span>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">执行时间</span>
+                                            <span class="tool-detail-value">2.1s</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">工具 ID</span>
+                                            <span class="tool-detail-value">tool_001</span>
+                                        </div>
+                                        <div class="tool-detail-section-title">输入参数</div>
+                                        <div class="tool-detail-input">
+                                            {"file_path": "/src/auth.ts"}
+                                        </div>
+                                        <div class="tool-detail-section-title">输出结果</div>
+                                        <div class="tool-detail-output">
+                                            // auth.ts - Authentication module
+                                            export function validateToken(token: string) { ... }
+                                            export function loginUser(credentials) { ... }
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-child tool-call" onclick="toggleToolDetail(this, 'edit-auth')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent-blue);">Edit</span>
+                                        <span>src/auth.ts</span>
+                                        <span style="color: var(--text-secondary);">(1s)</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-edit-auth">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Edit: src/auth.ts</span>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">执行时间</span>
+                                            <span class="tool-detail-value">0.8s</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">修改行数</span>
+                                            <span class="tool-detail-value">+15 / -3</span>
+                                        </div>
+                                        <div class="tool-detail-section-title">输入参数</div>
+                                        <div class="tool-detail-input">
+                                            {"file_path": "/src/auth.ts", "old_string": "export function loginUser", "new_string": "export async function loginUser"}
+                                        </div>
+                                        <div class="tool-detail-section-title">输出结果</div>
+                                        <div class="tool-detail-output">
+                                            Successfully edited file: /src/auth.ts
+                                            Applied 1 edit successfully.
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-child tool-call has-error" onclick="toggleToolDetail(this, 'bash-install')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent);">🔴 Bash</span>
+                                        <span>npm install</span>
+                                        <span style="color: var(--accent);">(45s) ← 异常</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-bash-install">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Bash: npm install</span>
+                                            <span class="tool-detail-status slow">慢速执行</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">执行时间</span>
+                                            <span class="tool-detail-value" style="color: var(--accent);">45.2s (阈值: 30s)</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">权限决策</span>
+                                            <span class="tool-detail-value">用户手动批准 (耗时 40s)</span>
+                                        </div>
+                                        <div class="tool-detail-section-title">输入参数</div>
+                                        <div class="tool-detail-input">
+                                            {"command": "npm install", "timeout": 60000}
+                                        </div>
+                                        <div class="tool-detail-section-title">输出结果</div>
+                                        <div class="tool-detail-output">
+                                            added 1423 packages in 45s
+                                            128 packages are looking for funding
+                                            run `npm fund` for details
+                                        </div>
+                                    </div>
+
+                                    <!-- Subagent Call -->
+                                    <div class="tree-child subagent-call" onclick="toggleSubagentDetail(this, 'sub-001')">
+                                        <span class="subagent-icon">AGENT</span>
+                                        <span style="color: #f5576c;">启动 Subagent</span>
+                                        <span class="subagent-id">sub_001</span>
+                                        <span style="color: var(--text-secondary);">重构验证逻辑 (总耗时 12s)</span>
+                                    </div>
+                                    <div class="subagent-container" id="detail-sub-001">
+                                        <div class="subagent-header">
+                                            <div class="subagent-title">
+                                                📋 Subagent 执行详情
+                                                <span class="subagent-id">sub_001</span>
+                                            </div>
+                                            <span class="tool-detail-status success">任务完成</span>
+                                        </div>
+                                        <div class="subagent-stats">
+                                            <div class="subagent-stat">
+                                                <div class="subagent-stat-label">总 Token</div>
+                                                <div class="subagent-stat-value">5.8k</div>
+                                            </div>
+                                            <div class="subagent-stat">
+                                                <div class="subagent-stat-label">总成本</div>
+                                                <div class="subagent-stat-value" style="color: var(--accent-yellow);">$0.15</div>
+                                            </div>
+                                            <div class="subagent-stat">
+                                                <div class="subagent-stat-label">思考轮次</div>
+                                                <div class="subagent-stat-value">3</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Thinking Round 1 -->
+                                        <div class="thinking-round">
+                                            <div class="thinking-round-header">
+                                                🤔 思考轮次 1
+                                                <span class="mini-token-badge">in: 1.5k | out: 0.8k</span>
+                                            </div>
+                                            <div class="thinking-round-llm">
+                                                <span class="mini-llm-icon">LLM</span>
+                                                claude-sonnet-4
+                                                <span style="color: var(--text-secondary); margin-left: auto;">(2.1s)</span>
+                                            </div>
+                                            <div class="thinking-round-tools">
+                                                <div class="thinking-round-tool">
+                                                    <span class="mini-tool-icon">R</span>
+                                                    Read: src/auth.ts (1.5s)
+                                                </div>
+                                                <div class="thinking-round-tool">
+                                                    <span class="mini-tool-icon">R</span>
+                                                    Read: src/validate.ts (0.8s)
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Thinking Round 2 -->
+                                        <div class="thinking-round">
+                                            <div class="thinking-round-header">
+                                                🤔 思考轮次 2
+                                                <span class="mini-token-badge">in: 2.2k | out: 1.1k</span>
+                                            </div>
+                                            <div class="thinking-round-llm">
+                                                <span class="mini-llm-icon">LLM</span>
+                                                claude-sonnet-4
+                                                <span style="color: var(--text-secondary); margin-left: auto;">(3.5s)</span>
+                                            </div>
+                                            <div class="thinking-round-tools">
+                                                <div class="thinking-round-tool">
+                                                    <span class="mini-tool-icon">E</span>
+                                                    Edit: src/auth.ts (0.6s)
+                                                </div>
+                                                <div class="thinking-round-tool">
+                                                    <span class="mini-tool-icon">W</span>
+                                                    Write: src/validate.ts (1.2s)
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Thinking Round 3 -->
+                                        <div class="thinking-round">
+                                            <div class="thinking-round-header">
+                                                🤔 思考轮次 3
+                                                <span class="mini-token-badge">in: 1.1k | out: 0.5k</span>
+                                            </div>
+                                            <div class="thinking-round-llm">
+                                                <span class="mini-llm-icon">LLM</span>
+                                                claude-sonnet-4
+                                                <span style="color: var(--text-secondary); margin-left: auto;">(1.2s)</span>
+                                            </div>
+                                            <div class="thinking-round-tools">
+                                                <div class="thinking-round-tool">
+                                                    <span class="mini-tool-icon">B</span>
+                                                    Bash: npm test (2.5s)
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style="margin-top: 12px; padding: 8px; background: var(--bg-primary); border-radius: 4px; font-size: 11px;">
+                                            <span style="color: var(--accent-green);">✓ Subagent 返回结果:</span> 验证逻辑已拆分到 validate.ts，测试通过
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-child tool-call" onclick="toggleToolDetail(this, 'write-test')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent-blue);">Write</span>
+                                        <span>tests/auth.test.ts</span>
+                                        <span style="color: var(--text-secondary);">(1s)</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-write-test">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Write: tests/auth.test.ts</span>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">执行时间</span>
+                                            <span class="tool-detail-value">1.2s</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">文件大小</span>
+                                            <span class="tool-detail-value">2.4 KB</span>
+                                        </div>
+                                        <div class="tool-detail-section-title">输入参数</div>
+                                        <div class="tool-detail-input">
+                                            {"file_path": "/tests/auth.test.ts", "content": "import { validateToken } from '../src/auth';\n\ndescribe('auth', () => { ... })"}
+                                        </div>
+                                        <div class="tool-detail-section-title">输出结果</div>
+                                        <div class="tool-detail-output">
+                                            Successfully wrote file: /tests/auth.test.ts
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Turn 2 -->
+                            <div class="tree-node" data-turn="2">
+                                <div class="tree-node-header" onclick="toggleTreeNode(this.parentElement)">
+                                    <span class="tree-expand-btn">▶</span>
+                                    <span class="tree-node-name">Turn 2: 测试验证</span>
+                                    <span class="tree-node-time">14:32:30</span>
+                                </div>
+                                <div class="tree-node-children">
+                                    <!-- LLM Call 2 -->
+                                    <div class="tree-child llm-call" onclick="toggleLlmDetail(this, 'llm-2')">
+                                        <span class="llm-icon">LLM</span>
+                                        <span>claude-sonnet-4</span>
+                                        <span class="token-badge">in: 3.5k | out: 0.8k</span>
+                                        <span class="cost-badge">$0.04</span>
+                                        <span style="color: var(--text-secondary);">(2.1s)</span>
+                                    </div>
+                                    <div class="llm-detail" id="detail-llm-2">
+                                        <div class="llm-detail-header">
+                                            <div class="llm-detail-title">
+                                                🤖 LLM API 调用
+                                                <span class="model-name">claude-sonnet-4-20250514</span>
+                                            </div>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="llm-detail-stats">
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">输入 Tokens</div>
+                                                <div class="llm-stat-value input">3,520</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">输出 Tokens</div>
+                                                <div class="llm-stat-value output">823</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">缓存读取</div>
+                                                <div class="llm-stat-value cache">2,100</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">预估成本</div>
+                                                <div class="llm-stat-value cost">$0.04</div>
+                                            </div>
+                                        </div>
+                                        <div class="llm-timing-row">
+                                            <div class="llm-timing-item">
+                                                <div class="llm-timing-label">TTFT</div>
+                                                <div class="llm-timing-value">0.6s</div>
+                                            </div>
+                                            <div class="llm-timing-item">
+                                                <div class="llm-timing-label">总耗时</div>
+                                                <div class="llm-timing-value">2.1s</div>
+                                            </div>
+                                            <div class="llm-timing-item">
+                                                <div class="llm-timing-label">生成速度</div>
+                                                <div class="llm-timing-value">390 tok/s</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-child tool-call" onclick="toggleToolDetail(this, 'bash-test')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent-blue);">Bash</span>
+                                        <span>npm test</span>
+                                        <span style="color: var(--text-secondary);">(5s)</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-bash-test">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Bash: npm test</span>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">执行时间</span>
+                                            <span class="tool-detail-value">5.3s</span>
+                                        </div>
+                                        <div class="tool-detail-section-title">输出结果</div>
+                                        <div class="tool-detail-output">
+                                            PASS tests/auth.test.ts
+                                            Test Suites: 1 passed, 1 total
+                                            Tests: 4 passed, 4 total
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-child tool-call" onclick="toggleToolDetail(this, 'read-result')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent-blue);">Read</span>
+                                        <span>测试输出</span>
+                                        <span style="color: var(--text-secondary);">(1s)</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-read-result">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Read: 测试输出分析</span>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="tool-detail-row">
+                                            <span class="tool-detail-label">执行时间</span>
+                                            <span class="tool-detail-value">0.5s</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Turn 3 -->
+                            <div class="tree-node" data-turn="3">
+                                <div class="tree-node-header" onclick="toggleTreeNode(this.parentElement)">
+                                    <span class="tree-expand-btn">▶</span>
+                                    <span class="tree-node-name">Turn 3: 用户确认并提交</span>
+                                    <span class="tree-node-time">14:35:00</span>
+                                </div>
+                                <div class="tree-node-children">
+                                    <!-- LLM Call 3 -->
+                                    <div class="tree-child llm-call" onclick="toggleLlmDetail(this, 'llm-3')">
+                                        <span class="llm-icon">LLM</span>
+                                        <span>claude-sonnet-4</span>
+                                        <span class="token-badge">in: 4.2k | out: 0.3k</span>
+                                        <span class="cost-badge">$0.02</span>
+                                        <span style="color: var(--text-secondary);">(1.5s)</span>
+                                    </div>
+                                    <div class="llm-detail" id="detail-llm-3">
+                                        <div class="llm-detail-header">
+                                            <div class="llm-detail-title">
+                                                🤖 LLM API 调用
+                                                <span class="model-name">claude-sonnet-4-20250514</span>
+                                            </div>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="llm-detail-stats">
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">输入 Tokens</div>
+                                                <div class="llm-stat-value input">4,230</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">输出 Tokens</div>
+                                                <div class="llm-stat-value output">312</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">缓存读取</div>
+                                                <div class="llm-stat-value cache">3,500</div>
+                                            </div>
+                                            <div class="llm-stat-item">
+                                                <div class="llm-stat-label">预估成本</div>
+                                                <div class="llm-stat-value cost">$0.02</div>
+                                            </div>
+                                        </div>
+                                        <div class="llm-detail-section">
+                                            <div class="llm-detail-section-title">用户提示</div>
+                                            <div class="llm-prompt-preview">
+                                                看起来不错，请帮我提交代码。
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-child tool-call" onclick="toggleToolDetail(this, 'bash-status')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent-blue);">Bash</span>
+                                        <span>git status</span>
+                                        <span style="color: var(--text-secondary);">(1s)</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-bash-status">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Bash: git status</span>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="tool-detail-section-title">输出结果</div>
+                                        <div class="tool-detail-output">
+                                            Changes not staged for commit:
+                                              modified: src/auth.ts
+                                              new file: tests/auth.test.ts
+                                        </div>
+                                    </div>
+
+                                    <div class="tree-child tool-call" onclick="toggleToolDetail(this, 'bash-commit')">
+                                        <span class="tool-icon">TOOL</span>
+                                        <span style="color: var(--accent-blue);">Bash</span>
+                                        <span>git commit</span>
+                                        <span style="color: var(--text-secondary);">(2s)</span>
+                                    </div>
+                                    <div class="tool-detail" id="detail-bash-commit">
+                                        <div class="tool-detail-header">
+                                            <span class="tool-detail-title">Bash: git commit</span>
+                                            <span class="tool-detail-status success">成功</span>
+                                        </div>
+                                        <div class="tool-detail-section-title">输出结果</div>
+                                        <div class="tool-detail-output">
+                                            [main abc123] feat: implement login with tests
+                                             2 files changed, 18 insertions(+)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ==================== PROBLEMS VIEW ==================== -->
+        <div class="view-container active" id="problems-view">
+            <div class="problems-layout">
+                <aside class="problems-list">
+                    <div class="problems-header">
+                        <h2>问题列表 <span class="severity-badge severity-critical">2 critical</span></h2>
+                    </div>
+
+                    <div class="problem-item active">
+                        <div class="problem-type">
+                            <span class="severity-badge severity-critical">critical</span>
+                            slow_tool: Bash
+                        </div>
+                        <div class="problem-meta">Session: abc-123 | Claude Code</div>
+                        <div class="problem-time">2024-01-15 14:32:18</div>
+                    </div>
+
+                    <div class="problem-item">
+                        <div class="problem-type">
+                            <span class="severity-badge severity-high">high</span>
+                            repeated_tool: Read (4次失败)
+                        </div>
+                        <div class="problem-meta">Session: def-456 | Codex</div>
+                        <div class="problem-time">2024-01-15 14:28:05</div>
+                    </div>
+
+                    <div class="problem-item">
+                        <div class="problem-type">
+                            <span class="severity-badge severity-medium">medium</span>
+                            high_cost_turn: $1.25
+                        </div>
+                        <div class="problem-meta">Session: ghi-789 | Claude Code</div>
+                        <div class="problem-time">2024-01-15 14:15:22</div>
+                    </div>
+
+                    <div class="problem-item">
+                        <div class="problem-type">
+                            <span class="severity-badge severity-medium">medium</span>
+                            token_burn_fast: 120k/5min
+                        </div>
+                        <div class="problem-meta">Session: abc-123 | Claude Code</div>
+                        <div class="problem-time">2024-01-15 13:50:00</div>
+                    </div>
+
+                    <div class="problem-item">
+                        <div class="problem-type">
+                            <span class="severity-badge severity-low">low</span>
+                            context_overflow: 3次压缩
+                        </div>
+                        <div class="problem-meta">Session: jkl-012 | Copilot CLI</div>
+                        <div class="problem-time">2024-01-15 13:30:18</div>
+                    </div>
+                </aside>
+
+                <section class="detail-panel">
+                    <div class="detail-header">
+                        <h2>slow_tool: Bash (45秒)</h2>
+                        <div>
+                            <span class="severity-badge severity-critical">critical</span>
+                            <span style="color: var(--text-secondary); margin-left: 8px;">2024-01-15 14:32:18</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-content">
+                        <div class="stats-row">
+                            <div class="stat-card">
+                                <div class="stat-label">执行时间</div>
+                                <div class="stat-value error">45s</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">工具名称</div>
+                                <div class="stat-value">Bash</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Session</div>
+                                <div class="stat-value" style="font-size: 14px;">abc-123-def</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Agent</div>
+                                <div class="stat-value" style="font-size: 14px;">Claude Code</div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>根因推断</h3>
+                            <div class="inference-box">
+                                <div class="inference-title">推断结果</div>
+                                <div class="inference-text">
+                                    permission prompt 导致用户确认延迟。在 PreToolUse 和 PostToolUse 之间存在 PermissionPrompt 事件，耗时约 40 秒，说明用户需要手动批准 Bash 工具调用。
+                                </div>
+                            </div>
+                            <div class="suggestion-box">
+                                <div class="suggestion-title">建议</div>
+                                <div class="inference-text">
+                                    检查 ~/.claude/settings.json 的 permission 配置，考虑将 Bash 工具设置为 auto-approve 或添加到 allowedTools 列表中。
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>关联事件链</h3>
+                            <div class="related-events">
+                                <span class="related-event-badge">PreToolUse → Bash</span>
+                                <span class="related-event-badge highlight">PermissionPrompt (40s)</span>
+                                <span class="related-event-badge">PostToolUse → Bash</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>上下文快览</h3>
+                            <div class="context-preview">
+                                <div class="context-label">tool_input:</div>
+                                <div class="context-content">{"command": "npm install", "timeout": 60000}</div>
+                                <div class="context-label" style="margin-top: 12px;">tool_result:</div>
+                                <div class="context-content">added 1423 packages in 45s</div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Session 时间线（异常位置高亮）</h3>
+                            <div class="timeline">
+                                <div class="timeline-track">
+                                    <div class="timeline-event tool" style="left: 10%;" title="PreToolUse: Read"></div>
+                                    <div class="timeline-event tool" style="left: 25%;" title="PostToolUse: Read"></div>
+                                    <div class="timeline-event tool" style="left: 40%;" title="PreToolUse: Bash"></div>
+                                    <div class="timeline-event anomaly highlight" style="left: 55%;" title="PermissionPrompt"></div>
+                                    <div class="timeline-event error" style="left: 70%;" title="slow_tool detected"></div>
+                                    <div class="timeline-event tool" style="left: 85%;" title="PostToolUse: Bash"></div>
+                                </div>
+                                <div class="timeline-labels">
+                                    <span>14:30:00</span>
+                                    <span>14:31:00</span>
+                                    <span>14:32:00</span>
+                                    <span>14:33:00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="switchView('sessions')">定位到 Session 详情</button>
+                            <button class="btn btn-secondary">标记为已处理</button>
+                            <button class="btn btn-secondary">查看原始日志</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ==================== ANALYSIS VIEW ==================== -->
+        <div class="view-container" id="analysis-view">
+            <div class="analysis-layout">
+                <!-- Time Range Selector -->
+                <div class="time-range-bar">
+                    <div class="time-range-title">📊 数据分析</div>
+                    <div class="time-range-buttons">
+                        <button class="time-btn active" onclick="switchTimeRange(this, 'today')">今日</button>
+                        <button class="time-btn" onclick="switchTimeRange(this, '7d')">7天</button>
+                        <button class="time-btn" onclick="switchTimeRange(this, '30d')">30天</button>
+                        <button class="time-btn" onclick="switchTimeRange(this, 'custom')">自定义</button>
+                    </div>
+                    <div class="time-range-picker" style="display: none;">
+                        <input type="date" value="2024-01-15"> ~ <input type="date" value="2024-01-21">
+                    </div>
+                </div>
+
+                <!-- Top Stats (保持原样，增加缓存相关) -->
+                <div class="analysis-grid">
+                    <div class="analysis-card">
+                        <div class="analysis-card-header">
+                            <span class="analysis-card-title">总 Token 消耗</span>
+                        </div>
+                        <div class="analysis-card-value">125,430</div>
+                        <div class="analysis-trend trend-up">↑ 15% vs 昨日</div>
+                    </div>
+                    <div class="analysis-card">
+                        <div class="analysis-card-header">
+                            <span class="analysis-card-title">总成本</span>
+                        </div>
+                        <div class="analysis-card-value" style="color: var(--accent-yellow);">$12.35</div>
+                        <div class="analysis-trend trend-down">↓ 5% vs 昨日</div>
+                    </div>
+                    <div class="analysis-card">
+                        <div class="analysis-card-header">
+                            <span class="analysis-card-title">缓存节省</span>
+                        </div>
+                        <div class="analysis-card-value" style="color: var(--accent-green);">$3.20</div>
+                        <div class="analysis-trend trend-up">↑ 26% vs 昨日</div>
+                    </div>
+                    <div class="analysis-card">
+                        <div class="analysis-card-header">
+                            <span class="analysis-card-title">异常数量</span>
+                        </div>
+                        <div class="analysis-card-value" style="color: var(--accent);">8</div>
+                        <div class="analysis-trend trend-down">↓ 3 vs 昨日</div>
+                    </div>
+                </div>
+
+                <!-- Row 1: Token/Cost Trend + Model Distribution -->
+                <div class="analysis-chart-section">
+                    <div class="chart-card span-2">
+                        <div class="chart-header">
+                            <h3 class="chart-title">📊 消耗时间线（点击查看 Session）</h3>
+                        </div>
+                        <div class="timeline-chart" style="cursor: pointer;">
+                            <!-- 累计统计 -->
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; padding: 12px; background: var(--bg-card); border-radius: 4px;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 11px; color: var(--text-secondary);">今日累计 Token</div>
+                                    <div style="font-size: 18px; font-weight: 600;">125,430</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 11px; color: var(--text-secondary);">今日累计成本</div>
+                                    <div style="font-size: 18px; font-weight: 600; color: var(--accent-yellow);">$12.35</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 11px; color: var(--text-secondary);">Session 数</div>
+                                    <div style="font-size: 18px; font-weight: 600;">45</div>
+                                </div>
+                            </div>
+                            <!-- 时间线 -->
+                            <div class="session-timeline">
+                                <div class="timeline-row" onclick="switchView('sessions')">
+                                    <div class="timeline-time">08:30</div>
+                                    <div class="timeline-dot normal"></div>
+                                    <div class="timeline-info">
+                                        <span class="timeline-session">abc-123-def</span>
+                                        <span class="timeline-agent">Claude Code</span>
+                                    </div>
+                                    <div class="timeline-cost">$1.20</div>
+                                    <div class="timeline-level normal">中</div>
+                                </div>
+                                <div class="timeline-row" onclick="switchView('sessions')">
+                                    <div class="timeline-time">09:15</div>
+                                    <div class="timeline-dot normal"></div>
+                                    <div class="timeline-info">
+                                        <span class="timeline-session">ghi-789-jkl</span>
+                                        <span class="timeline-agent">Codex</span>
+                                    </div>
+                                    <div class="timeline-cost">$0.80</div>
+                                    <div class="timeline-level normal">中</div>
+                                </div>
+                                <div class="timeline-row high" onclick="switchView('sessions')">
+                                    <div class="timeline-time">10:00</div>
+                                    <div class="timeline-dot high"></div>
+                                    <div class="timeline-info">
+                                        <span class="timeline-session">mno-456-pqr</span>
+                                        <span class="timeline-agent">Claude Code</span>
+                                        <span class="timeline-tag">包含 3 Subagent</span>
+                                    </div>
+                                    <div class="timeline-cost">$2.35</div>
+                                    <div class="timeline-level high">🔴 高</div>
+                                </div>
+                                <div class="timeline-row" onclick="switchView('sessions')">
+                                    <div class="timeline-time">11:45</div>
+                                    <div class="timeline-dot low"></div>
+                                    <div class="timeline-info">
+                                        <span class="timeline-session">xyz-111-aaa</span>
+                                        <span class="timeline-agent">Copilot CLI</span>
+                                    </div>
+                                    <div class="timeline-cost">$0.45</div>
+                                    <div class="timeline-level low">低</div>
+                                </div>
+                                <div class="timeline-row high" onclick="switchView('sessions')">
+                                    <div class="timeline-time">14:00</div>
+                                    <div class="timeline-dot anomaly"></div>
+                                    <div class="timeline-info">
+                                        <span class="timeline-session">bbb-222-ccc</span>
+                                        <span class="timeline-agent">Claude Code</span>
+                                        <span class="timeline-tag anomaly">⚠️ slow_tool 异常</span>
+                                    </div>
+                                    <div class="timeline-cost">$1.85</div>
+                                    <div class="timeline-level anomaly">异常</div>
+                                </div>
+                                <div class="timeline-row" onclick="switchView('sessions')">
+                                    <div class="timeline-time">15:30</div>
+                                    <div class="timeline-dot normal"></div>
+                                    <div class="timeline-info">
+                                        <span class="timeline-session">ddd-333-eee</span>
+                                        <span class="timeline-agent">Claude Code</span>
+                                    </div>
+                                    <div class="timeline-cost">$0.95</div>
+                                    <div class="timeline-level normal">中</div>
+                                </div>
+                                <div class="timeline-row high" onclick="switchView('sessions')">
+                                    <div class="timeline-time">16:20</div>
+                                    <div class="timeline-dot high"></div>
+                                    <div class="timeline-info">
+                                        <span class="timeline-session">fff-444-ggg</span>
+                                        <span class="timeline-agent">Claude Code</span>
+                                        <span class="timeline-tag">Opus 模型</span>
+                                    </div>
+                                    <div class="timeline-cost">$3.20</div>
+                                    <div class="timeline-level high">🔴 高</div>
+                                </div>
+                            </div>
+                            <!-- 提示 -->
+                            <div style="text-align: center; font-size: 11px; color: var(--accent-blue); margin-top: 12px;">
+                                💡 点击任意 Session 行 → 查看 Session 详情
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Model Distribution -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">模型 Token 分布</h3>
+                        </div>
+                        <div class="model-dist-chart">
+                            <div class="model-bar">
+                                <div class="model-bar-inner model-bar-sonnet" style="height: 96px;">
+                                    <span class="model-bar-value">45%</span>
+                                </div>
+                                <span class="model-bar-label">Sonnet</span>
+                            </div>
+                            <div class="model-bar">
+                                <div class="model-bar-inner model-bar-opus" style="height: 40px;">
+                                    <span class="model-bar-value">25%</span>
+                                </div>
+                                <span class="model-bar-label">Opus</span>
+                            </div>
+                            <div class="model-bar">
+                                <div class="model-bar-inner model-bar-haiku" style="height: 24px;">
+                                    <span class="model-bar-value">15%</span>
+                                </div>
+                                <span class="model-bar-label">Haiku</span>
+                            </div>
+                            <div class="model-bar">
+                                <div class="model-bar-inner model-bar-gpt" style="height: 24px;">
+                                    <span class="model-bar-value">15%</span>
+                                </div>
+                                <span class="model-bar-label">GPT-4</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
+                            Sonnet 成本占比: 35% | Opus 成本占比: 45% (单价更高)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Cache Efficiency + Anomaly Distribution + TTFT -->
+                <div class="analysis-chart-section">
+                    <!-- Cache Efficiency -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">缓存效率分析</h3>
+                        </div>
+                        <div class="cache-stats">
+                            <div class="cache-stat">
+                                <div class="cache-stat-icon">⚡</div>
+                                <div class="cache-stat-value saved">32,150</div>
+                                <div class="cache-stat-label">缓存读取 Tokens</div>
+                            </div>
+                            <div class="cache-stat">
+                                <div class="cache-stat-icon">💰</div>
+                                <div class="cache-stat-value savings">$3.20</div>
+                                <div class="cache-stat-label">节省成本</div>
+                            </div>
+                            <div class="cache-stat">
+                                <div class="cache-stat-icon">📊</div>
+                                <div class="cache-stat-value hit-rate">26%</div>
+                                <div class="cache-stat-label">缓存命中率</div>
+                            </div>
+                            <div class="cache-stat">
+                                <div class="cache-stat-icon">❌</div>
+                                <div class="cache-stat-value miss">93,280</div>
+                                <div class="cache-stat-label">未命中 Tokens</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Anomaly Distribution -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">异常类型分布</h3>
+                        </div>
+                        <div class="anomaly-pie-chart">
+                            <div class="anomaly-donut">
+                                <div class="anomaly-donut-inner">8</div>
+                            </div>
+                        </div>
+                        <div class="anomaly-legends">
+                            <div class="anomaly-legend">
+                                <span class="anomaly-legend-dot error"></span>
+                                <span>工具失败 (2)</span>
+                            </div>
+                            <div class="anomaly-legend">
+                                <span class="anomaly-legend-dot slow"></span>
+                                <span>执行慢速 (2)</span>
+                            </div>
+                            <div class="anomaly-legend">
+                                <span class="anomaly-legend-dot cost"></span>
+                                <span>成本过高 (3)</span>
+                            </div>
+                            <div class="anomaly-legend">
+                                <span class="anomaly-legend-dot other"></span>
+                                <span>其他异常 (1)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TTFT Distribution -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">TTFT 分布（首字节延迟）</h3>
+                        </div>
+                        <div class="ttft-bars">
+                            <div class="ttft-bar-row">
+                                <span class="ttft-label">&lt;0.5s</span>
+                                <div class="ttft-bar-container">
+                                    <div class="ttft-bar fast" style="width: 45%;"></div>
+                                </div>
+                                <span class="ttft-count">28</span>
+                            </div>
+                            <div class="ttft-bar-row">
+                                <span class="ttft-label">0.5-1s</span>
+                                <div class="ttft-bar-container">
+                                    <div class="ttft-bar normal" style="width: 35%;"></div>
+                                </div>
+                                <span class="ttft-count">22</span>
+                            </div>
+                            <div class="ttft-bar-row">
+                                <span class="ttft-label">1-2s</span>
+                                <div class="ttft-bar-container">
+                                    <div class="ttft-bar slow" style="width: 15%;"></div>
+                                </div>
+                                <span class="ttft-count">10</span>
+                            </div>
+                            <div class="ttft-bar-row">
+                                <span class="ttft-label">&gt;2s</span>
+                                <div class="ttft-bar-container">
+                                    <div class="ttft-bar very-slow" style="width: 5%;"></div>
+                                </div>
+                                <span class="ttft-count">3</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
+                            平均 TTFT: 0.8s | p95: 1.5s | p99: 2.8s
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Cost Attribution + Subagent Cost + Turn Efficiency -->
+                <div class="analysis-chart-section">
+                    <!-- Cost Attribution Top 10 -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">成本归因 Top 10（点击跳转 Session）</h3>
+                        </div>
+                        <div class="cost-ranking">
+                            <div class="cost-rank-item" onclick="switchView('sessions')">
+                                <div class="cost-rank-position top1">1</div>
+                                <div class="cost-rank-info">
+                                    <div class="cost-rank-session">Session: abc-123-def</div>
+                                    <div class="cost-rank-meta">Claude Code | 45 工具调用 | 3 Subagent</div>
+                                </div>
+                                <div class="cost-rank-value">$2.35</div>
+                            </div>
+                            <div class="cost-rank-item" onclick="switchView('sessions')">
+                                <div class="cost-rank-position top2">2</div>
+                                <div class="cost-rank-info">
+                                    <div class="cost-rank-session">Session: ghi-789-jkl</div>
+                                    <div class="cost-rank-meta">Claude Code | 32 工具调用</div>
+                                </div>
+                                <div class="cost-rank-value">$1.85</div>
+                            </div>
+                            <div class="cost-rank-item" onclick="switchView('sessions')">
+                                <div class="cost-rank-position top3">3</div>
+                                <div class="cost-rank-info">
+                                    <div class="cost-rank-session">Session: mno-456-pqr</div>
+                                    <div class="cost-rank-meta">Codex | 28 工具调用</div>
+                                </div>
+                                <div class="cost-rank-value">$1.20</div>
+                            </div>
+                            <div class="cost-rank-item">
+                                <div class="cost-rank-position other">4</div>
+                                <div class="cost-rank-info">
+                                    <div class="cost-rank-session">Session: xyz-111-aaa</div>
+                                    <div class="cost-rank-meta">Copilot CLI | 18 工具调用</div>
+                                </div>
+                                <div class="cost-rank-value">$0.85</div>
+                            </div>
+                            <div class="cost-rank-item">
+                                <div class="cost-rank-position other">5</div>
+                                <div class="cost-rank-info">
+                                    <div class="cost-rank-session">Session: bbb-222-ccc</div>
+                                    <div class="cost-rank-meta">Claude Code | 15 工具调用</div>
+                                </div>
+                                <div class="cost-rank-value">$0.72</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
+                            Top 5 占总成本 55% | 共 105 个 Sessions
+                        </div>
+                    </div>
+
+                    <!-- Subagent Cost -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Subagent 成本占比</h3>
+                        </div>
+                        <div class="subagent-cost-bar">
+                            <div class="subagent-cost-main" style="width: 75%;">
+                                Main Agent: $9.26 (75%)
+                            </div>
+                            <div class="subagent-cost-sub" style="width: 25%;">
+                                Subagent: $3.09 (25%)
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-size: 12px;">Subagent 调用次数</span>
+                                <span style="font-size: 12px; font-weight: 600;">12</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-size: 12px;">平均 Subagent 成本</span>
+                                <span style="font-size: 12px; font-weight: 600;">$0.26</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="font-size: 12px;">最深嵌套层级</span>
+                                <span style="font-size: 12px; font-weight: 600;">2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Turn Efficiency -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Turn 效率分析</h3>
+                        </div>
+                        <div class="turn-efficiency-grid">
+                            <div class="turn-eff-card">
+                                <div class="turn-eff-label">平均 Turns/Session</div>
+                                <div class="turn-eff-value">3.2</div>
+                                <div class="turn-eff-desc">理想: 2-4</div>
+                            </div>
+                            <div class="turn-eff-card">
+                                <div class="turn-eff-label">平均工具/Turn</div>
+                                <div class="turn-eff-value">4.5</div>
+                                <div class="turn-eff-desc">理想: 3-6</div>
+                            </div>
+                            <div class="turn-eff-card">
+                                <div class="turn-eff-label">输入/输出比</div>
+                                <div class="turn-eff-value" style="color: var(--accent-yellow);">2.8</div>
+                                <div class="turn-eff-desc">理想: 1-2</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 11px; color: var(--accent);">
+                            ⚠️ 输入/输出比偏高，提示可能有冗余上下文
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Tool Heatmap (Enhanced) + Agent Comparison -->
+                <div class="analysis-chart-section">
+                    <!-- Tool Heatmap Enhanced -->
+                    <div class="chart-card span-2">
+                        <div class="chart-header">
+                            <h3 class="chart-title">工具调用详情（点击查看详情）</h3>
+                        </div>
+                        <div class="heatmap-grid" style="margin-top: 16px; grid-template-columns: repeat(7, 1fr);">
+                            <div class="heatmap-cell" onclick="showToolStats('read')">
+                                <div class="heatmap-label">Read</div>
+                                <div class="heatmap-value high">156</div>
+                                <div style="font-size: 10px; color: var(--accent-green);">✓ 98%</div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">avg 1.5s</div>
+                            </div>
+                            <div class="heatmap-cell" onclick="showToolStats('edit')">
+                                <div class="heatmap-label">Edit</div>
+                                <div class="heatmap-value high">89</div>
+                                <div style="font-size: 10px; color: var(--accent-green);">✓ 95%</div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">avg 0.8s</div>
+                            </div>
+                            <div class="heatmap-cell" onclick="showToolStats('write')">
+                                <div class="heatmap-label">Write</div>
+                                <div class="heatmap-value medium">45</div>
+                                <div style="font-size: 10px; color: var(--accent-green);">✓ 100%</div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">avg 1.2s</div>
+                            </div>
+                            <div class="heatmap-cell" onclick="showToolStats('bash')">
+                                <div class="heatmap-label">Bash</div>
+                                <div class="heatmap-value high">78</div>
+                                <div style="font-size: 10px; color: var(--accent);">⚠ 85%</div>
+                                <div style="font-size: 10px; color: var(--accent-yellow);">avg 5.2s</div>
+                            </div>
+                            <div class="heatmap-cell" onclick="showToolStats('grep')">
+                                <div class="heatmap-label">Grep</div>
+                                <div class="heatmap-value medium">32</div>
+                                <div style="font-size: 10px; color: var(--accent-green);">✓ 100%</div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">avg 0.5s</div>
+                            </div>
+                            <div class="heatmap-cell" onclick="showToolStats('agent')">
+                                <div class="heatmap-label">Agent</div>
+                                <div class="heatmap-value low">12</div>
+                                <div style="font-size: 10px; color: var(--accent-green);">✓ 92%</div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">avg 12s</div>
+                            </div>
+                            <div class="heatmap-cell">
+                                <div class="heatmap-label">其他</div>
+                                <div class="heatmap-value low">8</div>
+                                <div style="font-size: 10px; color: var(--accent-green);">✓ 100%</div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">avg 0.3s</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; padding: 12px; background: var(--bg-card); border-radius: 4px;">
+                            <div style="font-size: 12px; margin-bottom: 8px;">📋 Bash 工具详情</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11px;">
+                                <div>失败次数: <span style="color: var(--accent);">12</span></div>
+                                <div>超时次数: <span style="color: var(--accent-yellow);">5</span></div>
+                                <div>用户批准: <span>28</span></div>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
+                                常见失败: 权限拒绝 (4), 命令不存在 (3), 网络超时 (5)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agent Comparison -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Agent 性能对比</h3>
+                        </div>
+                        <div style="margin-top: 16px;">
+                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); border-radius: 4px 4px 0 0;">
+                                <span>Agent</span>
+                                <span style="text-align: center;">Sessions</span>
+                                <span style="text-align: center;">Avg Cost</span>
+                                <span style="text-align: center;">Avg TTFT</span>
+                                <span style="text-align: center;">Errors</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; background: var(--bg-primary); border-radius: 0;">
+                                <span>Claude Code</span>
+                                <span style="text-align: center;">45</span>
+                                <span style="text-align: center;">$1.20</span>
+                                <span style="text-align: center;">0.8s</span>
+                                <span style="text-align: center; color: var(--accent);">5</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; background: var(--bg-primary); border-radius: 0;">
+                                <span>Codex</span>
+                                <span style="text-align: center;">28</span>
+                                <span style="text-align: center;">$0.85</span>
+                                <span style="text-align: center;">1.2s</span>
+                                <span style="text-align: center; color: var(--accent);">2</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; background: var(--bg-primary); border-radius: 0 0 4px 4px;">
+                                <span>Copilot CLI</span>
+                                <span style="text-align: center;">32</span>
+                                <span style="text-align: center;">$0.65</span>
+                                <span style="text-align: center;">0.9s</span>
+                                <span style="text-align: center; color: var(--accent-green);">1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // View switching
+        function switchView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+            // Show target view
+            document.getElementById(viewName + '-view').classList.add('active');
+            // Update tabs
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.nav-tab[data-view="' + viewName + '"]').classList.add('active');
+            // Close notification dropdown
+            document.getElementById('notification-dropdown').classList.remove('show');
+        }
+
+        // Tab click handler
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                switchView(this.getAttribute('data-view'));
+            });
+        });
+
+        // Notification toggle
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notification-dropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Problem item click
+        document.querySelectorAll('.problem-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.problem-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Session item click
+        document.querySelectorAll('.session-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.session-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Timeline event hover
+        document.querySelectorAll('.timeline-event').forEach(event => {
+            event.addEventListener('mouseenter', function() {
+                const title = this.getAttribute('title');
+                if (title) {
+                    console.log('Event:', title);
+                }
+            });
+        });
+
+        // Tool tree node expand/collapse
+        function toggleTreeNode(node) {
+            const isExpanded = node.classList.contains('expanded');
+            const btn = node.querySelector('.tree-expand-btn');
+
+            if (isExpanded) {
+                node.classList.remove('expanded');
+                btn.textContent = '▶';
+                // Close all tool details in this node
+                node.querySelectorAll('.tool-detail').forEach(detail => {
+                    detail.classList.remove('show');
+                });
+            } else {
+                node.classList.add('expanded');
+                btn.textContent = '▼';
+            }
+        }
+
+        // Tool detail expand/collapse
+        function toggleToolDetail(childElement, toolId) {
+            const detail = document.getElementById('detail-' + toolId);
+            if (!detail) return;
+
+            const isShown = detail.classList.contains('show');
+
+            // Close all other tool details in the same tree node
+            const parentNode = childElement.closest('.tree-node');
+            parentNode.querySelectorAll('.tool-detail').forEach(d => {
+                d.classList.remove('show');
+            });
+
+            // Toggle current detail
+            if (isShown) {
+                detail.classList.remove('show');
+            } else {
+                detail.classList.add('show');
+            }
+
+            // Update child element style to indicate selection
+            parentNode.querySelectorAll('.tree-child').forEach(c => {
+                c.style.background = '';
+            });
+            childElement.style.background = 'var(--bg-primary)';
+        }
+
+        // Keyboard navigation for tool tree
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // Close all tool details, LLM details, and subagent details on Escape
+                document.querySelectorAll('.tool-detail').forEach(detail => {
+                    detail.classList.remove('show');
+                });
+                document.querySelectorAll('.llm-detail').forEach(detail => {
+                    detail.classList.remove('show');
+                });
+                document.querySelectorAll('.subagent-container').forEach(detail => {
+                    detail.classList.remove('show');
+                });
+                document.querySelectorAll('.tree-child').forEach(c => {
+                    c.style.background = '';
+                });
+            }
+        });
+
+        // LLM detail expand/collapse
+        function toggleLlmDetail(childElement, llmId) {
+            const detail = document.getElementById('detail-' + llmId);
+            if (!detail) return;
+
+            const isShown = detail.classList.contains('show');
+
+            // Close all other details in the same tree node
+            const parentNode = childElement.closest('.tree-node');
+            parentNode.querySelectorAll('.tool-detail').forEach(d => {
+                d.classList.remove('show');
+            });
+            parentNode.querySelectorAll('.llm-detail').forEach(d => {
+                d.classList.remove('show');
+            });
+            parentNode.querySelectorAll('.subagent-container').forEach(d => {
+                d.classList.remove('show');
+            });
+
+            // Toggle current detail
+            if (isShown) {
+                detail.classList.remove('show');
+            } else {
+                detail.classList.add('show');
+            }
+
+            // Update child element style to indicate selection
+            parentNode.querySelectorAll('.tree-child').forEach(c => {
+                c.style.background = '';
+            });
+            childElement.style.background = 'linear-gradient(135deg, #1e3a5f40 0%, #2d1f4f40 100%)';
+        }
+
+        // Subagent detail expand/collapse
+        function toggleSubagentDetail(childElement, subId) {
+            const detail = document.getElementById('detail-' + subId);
+            if (!detail) return;
+
+            const isShown = detail.classList.contains('show');
+
+            // Close all other details in the same tree node
+            const parentNode = childElement.closest('.tree-node');
+            parentNode.querySelectorAll('.tool-detail').forEach(d => {
+                d.classList.remove('show');
+            });
+            parentNode.querySelectorAll('.llm-detail').forEach(d => {
+                d.classList.remove('show');
+            });
+            parentNode.querySelectorAll('.subagent-container').forEach(d => {
+                d.classList.remove('show');
+            });
+
+            // Toggle current detail
+            if (isShown) {
+                detail.classList.remove('show');
+            } else {
+                detail.classList.add('show');
+            }
+
+            // Update child element style to indicate selection
+            parentNode.querySelectorAll('.tree-child').forEach(c => {
+                c.style.background = '';
+            });
+            childElement.style.background = 'linear-gradient(135deg, #f093fb20 0%, #f5576c20 100%)';
+        }
+
+        // Time range selector for Analysis view
+        function switchTimeRange(btn, range) {
+            // Update button styles
+            document.querySelectorAll('.time-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+
+            // Show/hide custom date picker
+            const picker = document.querySelector('.time-range-picker');
+            if (range === 'custom') {
+                picker.style.display = 'flex';
+            } else {
+                picker.style.display = 'none';
+            }
+
+            // In real app, this would reload data for the selected range
+            console.log('Switching to time range:', range);
+        }
+
+        // Tool stats detail popup (for Analysis view)
+        function showToolStats(toolName) {
+            // In real app, this would show a modal or inline detail panel
+            console.log('Showing tool stats for:', toolName);
+            // Could also navigate to a filtered Sessions view
+            // switchView('sessions');
+        }
+    </script>
+</body>
+</html>

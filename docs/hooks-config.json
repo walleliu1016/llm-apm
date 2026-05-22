@@ -1,0 +1,73 @@
+# Claude Code Hooks 配置示例
+#
+# 将此配置添加到 Claude Code 设置文件中：
+# ~/.claude/settings.json 或项目级 .claude/settings.json
+#
+# Claude Code 会自动将 Hook 事件以 POST JSON 发送到配置的 URL
+
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": { "toolName": "*" },
+        "type": "http",
+        "url": "http://127.0.0.1:14318/api/hooks"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": { "toolName": "*" },
+        "type": "http",
+        "url": "http://127.0.0.1:14318/api/hooks"
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": { "toolName": "*" },
+        "type": "http",
+        "url": "http://127.0.0.1:14318/api/hooks"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "type": "http",
+        "url": "http://127.0.0.1:14318/api/hooks"
+      }
+    ],
+    "AssistantResponse": [
+      {
+        "type": "http",
+        "url": "http://127.0.0.1:14318/api/hooks"
+      }
+    ],
+    "SessionStart": [
+      {
+        "type": "http",
+        "url": "http://127.0.0.1:14318/api/hooks"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "type": "http",
+        "url": "http://127.0.0.1:14318/api/hooks"
+      }
+    ]
+  }
+}
+
+# Hook Payload 结构（Claude Code 自动发送）
+#
+# {
+#   "session_id": "xxx",
+#   "hook_event_name": "PreToolUse",
+#   "tool_name": "Read",
+#   "tool_input": { "file_path": "/src/main.go" },
+#   "tool_use_id": "toolu_xxx",
+#   "agent_id": "",
+#   "agent_type": "main",
+#   "cwd": "/home/user/project",
+#   "transcript_path": "~/.claude/projects/xxx.jsonl"
+# }
+#
+# PostToolUse 还会包含 tool_response 字段
+# PostToolUseFailure 包含 error 信息
