@@ -3076,6 +3076,22 @@
 
     <script>
         // ==================== API Helpers ====================
+        // REST API Fetch Helper
+        async function fetchAPI(endpoint) {
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    console.error('API error:', endpoint, response.status);
+                    return null;
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', endpoint, error);
+                return null;
+            }
+        }
+
+        // SQL Query Helper (保留用于复杂查询)
         async function query(sql) {
             try {
                 const resp = await fetch('/api/query', {
@@ -3109,6 +3125,51 @@
         let anomaliesCache = [];
         let sessionsCache = [];
 
+        // ==================== REST API Data Loading Functions ====================
+        // Task 10: API Fetch Functions
+        async function loadSessionsList() {
+            const data = await fetchAPI('/api/sessions?range=today');
+            if (data && data.sessions) {
+                sessionsCache = data.sessions;
+                renderSessionsList(data.sessions);
+            }
+        }
+
+        async function loadSessionDetail(sessionId) {
+            const data = await fetchAPI(`/api/sessions/${sessionId}`);
+            if (data) {
+                renderSessionDetail(data);
+            }
+        }
+
+        async function loadProblemsList() {
+            const data = await fetchAPI('/api/problems?range=today');
+            if (data && data.problems) {
+                anomaliesCache = data.problems;
+                renderProblemsList(data.problems, data.severity_counts || {});
+            }
+        }
+
+        async function loadProblemDetail(problemId) {
+            const data = await fetchAPI(`/api/problems/${problemId}`);
+            if (data) {
+                renderProblemDetail(data);
+            }
+        }
+
+        async function loadAnalysisOverview() {
+            // Load multiple stats endpoints
+            const overview = await fetchAPI('/api/stats/overview');
+            const cache = await fetchAPI('/api/stats/cache');
+            const tools = await fetchAPI('/api/stats/tools');
+
+            renderAnalysisOverview({
+                overview: overview,
+                cache: cache,
+                tools: tools
+            });
+        }
+
         // ==================== View switching ====================
         function switchView(viewName) {
             document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
@@ -3117,9 +3178,299 @@
             document.querySelector('.nav-tab[data-view="' + viewName + '"]').classList.add('active');
             document.getElementById('notification-dropdown')?.classList.remove('show');
 
-            if (viewName === 'sessions') loadSessions();
-            if (viewName === 'problems') loadProblems();
-            if (viewName === 'analysis') loadAnalysis();
+            // Load data using REST API
+            if (viewName === 'sessions') loadSessionsList();
+            if (viewName === 'problems') loadProblemsList();
+            if (viewName === 'analysis') loadAnalysisOverview();
+        }
+
+        // ==================== Render Functions ====================
+        // Task 11: Render Functions for Sessions
+        function renderSessionsList(sessions) {
+            const container = document.querySelector('.sessions-list');
+            container.querySelectorAll('.session-item').forEach(item => item.remove());
+
+            if (sessions.length === 0) {
+                const item = document.createElement('div');
+                item.className = 'session-item';
+                item.innerHTML = '<div class="session-header"><span class="session-id">No sessions</span></div>';
+                container.appendChild(item);
+                return;
+            }
+
+            sessions.forEach((s, i) => {
+                const item = document.createElement('div');
+                item.className = 'session-item' + (s.has_anomaly ? ' has-anomaly' : '') + (i === 0 ? ' active' : '');
+                item.onclick = () => loadSessionDetail(s.session_id);
+                item.innerHTML = `
+                    <div class="session-header">
+                        <span class="session-id">${s.session_id?.substring(0,12) || '-'}</span>
+                        <span class="session-status status-${s.status}">${s.status_text}</span>
+                    </div>
+                    <div class="session-meta">
+                        <span>${s.agent_source}</span>
+                        <span>${s.start_time}</span>
+                    </div>
+                    <div class="session-stats">
+                        ${s.has_anomaly ? '<span class="session-stat">🔴 ' + s.anomaly_count + ' 异常</span>' : ''}
+                        <span class="session-stat">${s.tool_count || 0} 工具调用</span>
+                        <span class="session-stat">${s.cost}</span>
+                        <span class="session-stat">${s.total_tokens}</span>
+                    </div>`;
+                container.appendChild(item);
+            });
+
+            // Load first session detail
+            if (sessions.length > 0) {
+                loadSessionDetail(sessions[0].session_id);
+            }
+        }
+
+        function renderSessionDetail(data) {
+            document.querySelectorAll('.session-item').forEach(i => i.classList.remove('active'));
+            // Find and activate the matching session item
+            const items = document.querySelectorAll('.session-item');
+            items.forEach(item => {
+                const id = item.querySelector('.session-id')?.textContent;
+                if (id && data.session_id?.startsWith(id)) {
+                    item.classList.add('active');
+                }
+            });
+
+            const panel = document.querySelector('.session-detail-panel');
+            const header = panel.querySelector('.session-detail-header');
+            header.querySelector('.session-title-row h2').textContent = data.session_id?.substring(0,16) + '...' || '-';
+
+            const infoItems = header.querySelectorAll('.info-item .info-value');
+            infoItems[0].textContent = data.agent_source || 'Claude Code';
+            infoItems[1].textContent = data.duration || '-';
+            infoItems[2].textContent = data.total_cost || '$0.00';
+
+            // Keep existing timeline and tool-tree rendering logic
+            // (will use SQL query for detailed events for now)
+            loadSessionEvents(data.session_id);
+        }
+
+        async function loadSessionEvents(sessionId) {
+            const eventsSql = `SELECT ts, event_type, tool_name, tool_input, tool_result, error_flag FROM apm_hook_events WHERE session_id = '${sessionId}' ORDER BY ts`;
+            const data = await query(eventsSql);
+            const events = parseResult(data);
+
+            const panel = document.querySelector('.session-detail-panel');
+            if (!events?.length) {
+                panel.querySelector('.timeline-full-track').innerHTML = '';
+                panel.querySelector('.tool-tree').innerHTML = '';
+                return;
+            }
+
+            const start = events[0].ts, end = events[events.length-1].ts, dur = end - start;
+
+            // Update timeline
+            const timelineTrack = panel.querySelector('.timeline-full-track');
+            let timelineHtml = '';
+            events.forEach(e => {
+                const pos = dur > 0 ? ((e.ts - start) / dur) * 100 : 0;
+                const cls = e.error_flag ? 'error' : e.tool_name ? 'tool' : 'user';
+                const lbl = e.tool_name || e.event_type;
+                timelineHtml += `<div class="timeline-block ${cls}" style="left: ${Math.min(pos,95)}%; width: 6%;"><span class="timeline-tooltip">${fmtTime(e.ts)}: ${lbl}</span>${lbl.substring(0,5)}</div>`;
+            });
+            timelineTrack.innerHTML = timelineHtml;
+
+            // Update tool-tree
+            const toolTree = panel.querySelector('.tool-tree');
+            toolTree.innerHTML = buildTurnNodesHtml(events);
+        }
+
+        // Task 12: Render Functions for Problems
+        function renderProblemsList(problems, severityCounts) {
+            const container = document.querySelector('.problems-list');
+            container.querySelectorAll('.problem-item').forEach(item => item.remove());
+
+            // Update header severity badges
+            const header = container.querySelector('.problems-header h2');
+            const existingBadges = header.querySelectorAll('.severity-badge');
+            existingBadges.forEach(b => b.remove());
+
+            // Add severity counts to header
+            Object.keys(severityCounts).forEach(sev => {
+                if (severityCounts[sev] > 0) {
+                    const badge = document.createElement('span');
+                    badge.className = `severity-badge severity-${sev}`;
+                    badge.textContent = `${sev}: ${severityCounts[sev]}`;
+                    header.appendChild(badge);
+                }
+            });
+
+            if (problems.length === 0) {
+                const item = document.createElement('div');
+                item.className = 'problem-item';
+                item.innerHTML = '<div class="problem-type"><span class="severity-badge">无</span>No anomalies detected</div>';
+                container.appendChild(item);
+                return;
+            }
+
+            problems.forEach((p, i) => {
+                const item = document.createElement('div');
+                item.className = 'problem-item' + (i === 0 ? ' active' : '');
+                item.onclick = () => loadProblemDetail(p.problem_id);
+                item.innerHTML = `
+                    <div class="problem-type">
+                        <span class="severity-badge severity-${p.severity}">${p.severity}</span>
+                        ${p.problem_type}
+                    </div>
+                    <div class="problem-meta">Session: ${p.session_id_short} | ${p.agent_source}</div>
+                    <div class="problem-time">${p.time}</div>`;
+                container.appendChild(item);
+            });
+
+            // Load first problem detail
+            if (problems.length > 0) {
+                loadProblemDetail(problems[0].problem_id);
+            }
+        }
+
+        function renderProblemDetail(data) {
+            document.querySelectorAll('.problem-item').forEach(i => i.classList.remove('active'));
+            // Find and activate matching problem item
+            const items = document.querySelectorAll('.problem-item');
+            items.forEach(item => {
+                const typeText = item.querySelector('.problem-type')?.textContent;
+                if (typeText && typeText.includes(data.problem_type)) {
+                    item.classList.add('active');
+                }
+            });
+
+            const panel = document.querySelector('.detail-panel');
+            const header = panel.querySelector('.detail-header h2');
+            const badge = panel.querySelector('.detail-header .severity-badge');
+            const timeSpan = panel.querySelector('.detail-header span[style*="color: var(--text-secondary)"]');
+
+            // Update header
+            header.textContent = data.problem_title || data.problem_type || '-';
+            badge.className = `severity-badge severity-${data.severity || 'medium'}`;
+            badge.textContent = data.severity || 'medium';
+            timeSpan.textContent = data.time || '-';
+
+            // Update stats-row
+            const statsRow = panel.querySelector('.stats-row');
+            const stats = statsRow.querySelectorAll('.stat-card');
+            if (data.stat_cards && data.stat_cards.length > 0) {
+                data.stat_cards.forEach((stat, i) => {
+                    if (stats[i]) {
+                        stats[i].querySelector('.stat-value').textContent = stat.value || '-';
+                        stats[i].querySelector('.stat-value').className = `stat-value ${stat.has_error ? 'error' : ''}`;
+                    }
+                });
+            }
+
+            // Keep existing inference and timeline rendering
+            // (use SQL query for detailed events)
+            loadProblemEvents(data.problem_id, data.problem_type);
+        }
+
+        async function loadProblemEvents(problemId, problemType) {
+            // For now, use the first anomaly from cache
+            const a = anomaliesCache.find(p => p.problem_id === problemId);
+            if (!a) return;
+
+            let extra = {};
+            try { if (a.extra) extra = JSON.parse(a.extra); } catch {}
+
+            // Get session events for timeline
+            const eventsSql = `SELECT ts, event_type, tool_name FROM apm_hook_events WHERE session_id = '${a.session_id}' ORDER BY ts`;
+            const eventsData = await query(eventsSql);
+            const events = parseResult(eventsData);
+
+            const panel = document.querySelector('.detail-panel');
+
+            // Update inference
+            const inference = getInference(problemType, extra);
+            const inferenceTexts = panel.querySelectorAll('.inference-box .inference-text, .suggestion-box .inference-text');
+            if (inferenceTexts[0]) inferenceTexts[0].textContent = inference.result;
+            if (inferenceTexts[1]) inferenceTexts[1].textContent = inference.suggestion;
+
+            // Update related events
+            const relatedEvents = panel.querySelector('.related-events');
+            if (relatedEvents) {
+                relatedEvents.innerHTML = buildEventChainHtml(events, extra.tool_name);
+            }
+
+            // Update context preview
+            const contextContent = panel.querySelectorAll('.context-content');
+            if (contextContent[0]) contextContent[0].textContent = extra.tool_input || '-';
+            if (contextContent[1]) contextContent[1].textContent = extra.tool_result || '-';
+
+            // Update timeline
+            const timelineTrack = panel.querySelector('.timeline .timeline-track');
+            const timelineLabels = panel.querySelector('.timeline .timeline-labels');
+            if (timelineTrack) timelineTrack.innerHTML = buildTimelineEventsHtml(events, a.ts);
+            if (timelineLabels) timelineLabels.innerHTML = buildTimelineLabelsHtml(events);
+        }
+
+        // Task 13: Render Functions for Analysis Overview
+        function renderAnalysisOverview(data) {
+            // Process overview data (tokens)
+            if (data.overview) {
+                const overviewData = parseResult(data.overview);
+                if (overviewData.length > 0) {
+                    const totalInput = overviewData.reduce((sum, r) => sum + (r.total_input || 0), 0);
+                    const totalOutput = overviewData.reduce((sum, r) => sum + (r.total_output || 0), 0);
+                    const total = totalInput + totalOutput;
+                    document.querySelector('.analysis-card:nth-child(1) .analysis-card-value').textContent =
+                        total > 0 ? (total >= 1000 ? (total/1000).toFixed(1) + 'K' : total) : '-';
+                }
+            }
+
+            // Process cache data
+            if (data.cache) {
+                const cacheData = parseResult(data.cache);
+                if (cacheData.length > 0) {
+                    const cacheRead = cacheData[0].cache_read || 0;
+                    document.querySelector('.analysis-card:nth-child(3) .analysis-card-value').textContent =
+                        cacheRead > 0 ? cacheRead : '-';
+                }
+            }
+
+            // Process tools data for heatmap
+            if (data.tools) {
+                const toolsData = parseResult(data.tools);
+                const heatmap = document.querySelector('.heatmap-grid');
+                if (heatmap && toolsData.length) {
+                    heatmap.innerHTML = toolsData.map(t => `
+                        <div class="heatmap-cell">
+                            <div class="heatmap-label">${t.tool_name}</div>
+                            <div class="heatmap-value ${t.error_count > 0 ? 'medium' : 'low'}">${t.call_count}</div>
+                            <div style="font-size: 10px; color: var(--accent-green);">${t.error_count > 0 ? (t.call_count - t.error_count) + '/' + t.call_count : '100%'}</div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // Update anomaly count (use SQL query for now)
+            const anomSql = `SELECT COUNT(*) as count FROM apm_anomalies`;
+            query(anomSql).then(anomData => {
+                const result = parseResult(anomData);
+                document.querySelector('.analysis-card:nth-child(4) .analysis-card-value').textContent = result[0]?.count || 0;
+            });
+
+            // Update session timeline (use SQL query for now)
+            const sessSql = `SELECT session_id, MIN(ts) as start_ts, SUM(CASE WHEN error_flag THEN 1 ELSE 0 END) as errors, COUNT(*) as events FROM apm_hook_events GROUP BY session_id ORDER BY start_ts DESC LIMIT 10`;
+            query(sessSql).then(sessData => {
+                const sessions = parseResult(sessData);
+                const timeline = document.querySelector('.session-timeline');
+                if (timeline && sessions.length) {
+                    timeline.innerHTML = sessions.map(s => {
+                        const err = s.errors > 0;
+                        return `<div class="timeline-row ${err ? 'high' : ''}" onclick="switchView('sessions')">
+                            <div class="timeline-time">${fmtTime(s.start_ts)}</div>
+                            <div class="timeline-dot ${err ? 'anomaly' : 'normal'}"></div>
+                            <div class="timeline-info"><span class="timeline-session">${s.session_id?.substring(0,12)}</span><span class="timeline-agent">Claude Code</span>${err ? '<span class="timeline-tag anomaly">异常</span>' : ''}</div>
+                            <div class="timeline-cost">${s.events} events</div>
+                            <div class="timeline-level ${err ? 'anomaly' : 'normal'}">${err ? '异常' : '正常'}</div>
+                        </div>`;
+                    }).join('');
+                }
+            });
         }
 
         document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -3130,117 +3481,7 @@
             document.getElementById('notification-dropdown')?.classList.toggle('show');
         }
 
-        // ==================== Problems View ====================
-        async function loadProblems() {
-            const sql = `SELECT ts, session_id, anomaly_type, severity, description, suggested_cause, extra FROM apm_anomalies ORDER BY ts DESC LIMIT 20`;
-            const data = await query(sql);
-            anomaliesCache = parseResult(data);
-
-            // Get agents
-            const agentSql = `SELECT session_id, MAX(agent_source) as agent FROM apm_hook_events GROUP BY session_id`;
-            const agentData = await query(agentSql);
-            const agents = {};
-            parseResult(agentData).forEach(s => agents[s.session_id] = s.agent || 'claude_code');
-
-            const container = document.querySelector('.problems-list');
-            // Remove existing items except header
-            container.querySelectorAll('.problem-item').forEach(item => item.remove());
-
-            if (anomaliesCache.length === 0) {
-                const item = document.createElement('div');
-                item.className = 'problem-item';
-                item.innerHTML = '<div class="problem-type"><span class="severity-badge">无</span>No anomalies detected</div>';
-                container.appendChild(item);
-                return;
-            }
-
-            anomaliesCache.forEach((a, i) => {
-                let extra = {};
-                try { if (a.extra) extra = JSON.parse(a.extra); } catch {}
-
-                const toolInfo = extra.tool_name ? ': ' + extra.tool_name : '';
-                const agentName = agents[a.session_id] || 'Claude Code';
-                const item = document.createElement('div');
-                item.className = 'problem-item' + (i === 0 ? ' active' : '');
-                item.onclick = () => showProblemDetail(i);
-                item.innerHTML = `
-                    <div class="problem-type">
-                        <span class="severity-badge severity-${a.severity || 'medium'}">${a.severity || 'medium'}</span>
-                        ${a.anomaly_type}${toolInfo}
-                    </div>
-                    <div class="problem-meta">Session: ${a.session_id?.substring(0,8) || '-'} | ${agentName}</div>
-                    <div class="problem-time">${fmtDateTime(a.ts)}</div>`;
-                container.appendChild(item);
-            });
-
-            showProblemDetail(0);
-        }
-
-        async function showProblemDetail(index) {
-            const a = anomaliesCache[index];
-            if (!a) return;
-
-            document.querySelectorAll('.problem-item').forEach(i => i.classList.remove('active'));
-            if (event?.target) event.target.closest('.problem-item')?.classList.add('active');
-
-            let extra = {};
-            try { if (a.extra) extra = JSON.parse(a.extra); } catch {}
-
-            // Get session events for timeline
-            const eventsSql = `SELECT ts, event_type, tool_name FROM apm_hook_events WHERE session_id = '${a.session_id}' ORDER BY ts`;
-            const eventsData = await query(eventsSql);
-            const events = parseResult(eventsData);
-
-            // Get agent
-            const agentSql = `SELECT MAX(agent_source) as agent FROM apm_hook_events WHERE session_id = '${a.session_id}'`;
-            const agentData = await query(agentSql);
-            const agent = parseResult(agentData)[0]?.agent || 'Claude Code';
-
-            // Update detail-panel elements (keep HTML structure from demo)
-            const panel = document.querySelector('.detail-panel');
-            const header = panel.querySelector('.detail-header h2');
-            const badge = panel.querySelector('.detail-header .severity-badge');
-            const timeSpan = panel.querySelector('.detail-header span[style*="color: var(--text-secondary)"]');
-
-            // Update header
-            const duration = extra.duration_ms ? (extra.duration_ms/1000).toFixed(1) + '秒' : '-';
-            header.textContent = `${a.anomaly_type}${extra.tool_name ? ': ' + extra.tool_name : ''} ${extra.duration_ms ? '(' + duration + ')' : ''}`;
-            badge.className = `severity-badge severity-${a.severity || 'medium'}`;
-            badge.textContent = a.severity || 'medium';
-            timeSpan.textContent = fmtDateTime(a.ts);
-
-            // Update stats-row
-            const statsRow = panel.querySelector('.stats-row');
-            const stats = statsRow.querySelectorAll('.stat-card');
-            stats[0].querySelector('.stat-value').textContent = duration;
-            stats[0].querySelector('.stat-value').className = `stat-value ${extra.duration_ms > 60000 ? 'error' : ''}`;
-            stats[1].querySelector('.stat-value').textContent = extra.tool_name || '-';
-            stats[2].querySelector('.stat-value').textContent = a.session_id?.substring(0,12) || '-';
-            stats[3].querySelector('.stat-value').textContent = agent;
-
-            // Update inference (根因推断)
-            const inference = getInference(a.anomaly_type, extra);
-            const inferenceTexts = panel.querySelectorAll('.inference-box .inference-text, .suggestion-box .inference-text');
-            inferenceTexts[0].textContent = inference.result;
-            inferenceTexts[1].textContent = inference.suggestion;
-
-            // Update related events (关联事件链)
-            const relatedEvents = panel.querySelector('.related-events');
-            relatedEvents.innerHTML = buildEventChainHtml(events, extra.tool_name);
-
-            // Update context preview (上下文快览)
-            const contextContent = panel.querySelectorAll('.context-content');
-            contextContent[0].textContent = extra.tool_input || '-';
-            contextContent[1].textContent = extra.tool_result || '-';
-
-            // Update timeline (Session时间线)
-            const timelineTrack = panel.querySelector('.timeline .timeline-track');
-            const timelineLabels = panel.querySelector('.timeline .timeline-labels');
-            timelineTrack.innerHTML = buildTimelineEventsHtml(events, a.ts);
-            timelineLabels.innerHTML = buildTimelineLabelsHtml(events);
-        }
-
-        function getInference(type, extra) {
+        // ==================== Helper Functions ====================
             const map = {
                 'slow_tool': {
                     result: `工具 ${extra.tool_name || ''} 执行时间过长，可能由于权限确认延迟、网络请求慢或长时间运行的任务导致。`,
@@ -3284,86 +3525,6 @@
             if (!events?.length) return '<span>-</span><span>-</span><span>-</span><span>-</span>';
             const start = events[0].ts, end = events[events.length-1].ts, dur = end - start;
             return `<span>${fmtTime(start)}</span><span>${fmtTime(start + dur/3)}</span><span>${fmtTime(start + dur*2/3)}</span><span>${fmtTime(end)}</span>`;
-        }
-
-        // ==================== Sessions View ====================
-        async function loadSessions() {
-            const sql = `SELECT session_id, MIN(ts) as start_ts, MAX(ts) as end_ts, MAX(agent_source) as agent, SUM(CASE WHEN error_flag THEN 1 ELSE 0 END) as errors, SUM(CASE WHEN event_type='PostToolUse' AND tool_name!='' THEN 1 ELSE 0 END) as tools FROM apm_hook_events GROUP BY session_id ORDER BY start_ts DESC LIMIT 20`;
-            const data = await query(sql);
-            sessionsCache = parseResult(data);
-
-            const container = document.querySelector('.sessions-list');
-            container.querySelectorAll('.session-item').forEach(item => item.remove());
-
-            if (sessionsCache.length === 0) {
-                const item = document.createElement('div');
-                item.className = 'session-item';
-                item.innerHTML = '<div class="session-header"><span class="session-id">No sessions</span></div>';
-                container.appendChild(item);
-                return;
-            }
-
-            sessionsCache.forEach((s, i) => {
-                const hasAnomaly = s.errors > 0;
-                const agentName = s.agent === 'claude_code' ? 'Claude Code' : s.agent === 'codex' ? 'Codex' : s.agent || 'Claude Code';
-                const item = document.createElement('div');
-                item.className = 'session-item' + (hasAnomaly ? ' has-anomaly' : '') + (i === 0 ? ' active' : '');
-                item.onclick = () => showSessionDetail(s.session_id);
-                item.innerHTML = `
-                    <div class="session-header">
-                        <span class="session-id">${s.session_id?.substring(0,12) || '-'}</span>
-                        <span class="session-status status-completed">已完成</span>
-                    </div>
-                    <div class="session-meta">
-                        <span>${agentName}</span>
-                        <span>${fmtDateTime(s.start_ts)}</span>
-                    </div>
-                    <div class="session-stats">
-                        ${hasAnomaly ? '<span class="session-stat">🔴 ' + s.errors + ' 异常</span>' : ''}
-                        <span class="session-stat">${s.tools || 0} 工具调用</span>
-                    </div>`;
-                container.appendChild(item);
-            });
-
-            showSessionDetail(sessionsCache[0]?.session_id);
-        }
-
-        async function showSessionDetail(sessionId) {
-            document.querySelectorAll('.session-item').forEach(i => i.classList.remove('active'));
-            if (event?.target) event.target.closest('.session-item')?.classList.add('active');
-
-            const eventsSql = `SELECT ts, event_type, tool_name, tool_input, tool_result, error_flag FROM apm_hook_events WHERE session_id = '${sessionId}' ORDER BY ts`;
-            const data = await query(eventsSql);
-            const events = parseResult(data);
-
-            const panel = document.querySelector('.session-detail-panel');
-            if (!events?.length) { panel.innerHTML = '<div class="empty-state">No events</div>'; return; }
-
-            const start = events[0].ts, end = events[events.length-1].ts, dur = end - start;
-            const errors = events.filter(e => e.error_flag).length;
-
-            // Update session-detail-header (保持demo结构)
-            const header = panel.querySelector('.session-detail-header');
-            header.querySelector('.session-title-row h2').textContent = sessionId.substring(0,12) + '-' + sessionId.substring(12,16) + '...';
-            const infoItems = header.querySelectorAll('.info-item .info-value');
-            infoItems[0].textContent = 'Claude Code';
-            infoItems[1].textContent = fmtDuration(start, end);
-            infoItems[2].textContent = '$0.00';
-
-            // Update timeline (保持demo结构)
-            const timelineTrack = panel.querySelector('.timeline-full-track');
-            let timelineHtml = '';
-            events.forEach(e => {
-                const pos = dur > 0 ? ((e.ts - start) / dur) * 100 : 0;
-                const cls = e.error_flag ? 'error' : e.tool_name ? 'tool' : 'user';
-                const lbl = e.tool_name || e.event_type;
-                timelineHtml += `<div class="timeline-block ${cls}" style="left: ${Math.min(pos,95)}%; width: 6%;"><span class="timeline-tooltip">${fmtTime(e.ts)}: ${lbl}</span>${lbl.substring(0,5)}</div>`;
-            });
-            timelineTrack.innerHTML = timelineHtml;
-
-            // Update tool-tree (保持demo结构 - tree-node展开折叠)
-            const toolTree = panel.querySelector('.tool-tree');
-            toolTree.innerHTML = buildTurnNodesHtml(events);
         }
 
         function buildTurnNodesHtml(events) {
@@ -3478,47 +3639,6 @@
                 </div>`;
         }
 
-        // ==================== Analysis View ====================
-        async function loadAnalysis() {
-            const tokenSql = `SELECT SUM(input_tokens) as input, SUM(output_tokens) as output FROM apm_messages`;
-            const tokenData = await query(tokenSql);
-            const tokens = parseResult(tokenData)[0] || {};
-            const total = (tokens.input || 0) + (tokens.output || 0);
-
-            document.querySelector('.analysis-card:nth-child(1) .analysis-card-value').textContent = total > 0 ? (total >= 1000 ? (total/1000).toFixed(1) + 'K' : total) : '-';
-            document.querySelector('.analysis-card:nth-child(2) .analysis-card-value').textContent = '$0.00';
-            document.querySelector('.analysis-card:nth-child(3) .analysis-card-value').textContent = tokens.cache_read || '-';
-
-            const anomSql = `SELECT COUNT(*) as count FROM apm_anomalies`;
-            const anomData = await query(anomSql);
-            document.querySelector('.analysis-card:nth-child(4) .analysis-card-value').textContent = parseResult(anomData)[0]?.count || 0;
-
-            const toolSql = `SELECT tool_name, COUNT(*) as calls FROM apm_hook_events WHERE event_type='PostToolUse' AND tool_name!='' GROUP BY tool_name ORDER BY calls DESC LIMIT 12`;
-            const toolData = await query(toolSql);
-            const tools = parseResult(toolData);
-            const heatmap = document.querySelector('.heatmap-grid');
-            if (heatmap && tools.length) {
-                heatmap.innerHTML = tools.map(t => `<div class="heatmap-cell"><div class="heatmap-label">${t.tool_name}</div><div class="heatmap-value low">${t.calls}</div><div style="font-size: 10px; color: var(--accent-green);">100%</div></div>`).join('');
-            }
-
-            const sessSql = `SELECT session_id, MIN(ts) as start_ts, SUM(CASE WHEN error_flag THEN 1 ELSE 0 END) as errors, COUNT(*) as events FROM apm_hook_events GROUP BY session_id ORDER BY start_ts DESC LIMIT 10`;
-            const sessData = await query(sessSql);
-            const sessions = parseResult(sessData);
-            const timeline = document.querySelector('.session-timeline');
-            if (timeline && sessions.length) {
-                timeline.innerHTML = sessions.map(s => {
-                    const err = s.errors > 0;
-                    return `<div class="timeline-row ${err ? 'high' : ''}" onclick="switchView('sessions')">
-                        <div class="timeline-time">${fmtTime(s.start_ts)}</div>
-                        <div class="timeline-dot ${err ? 'anomaly' : 'normal'}"></div>
-                        <div class="timeline-info"><span class="timeline-session">${s.session_id?.substring(0,12)}</span><span class="timeline-agent">Claude Code</span>${err ? '<span class="timeline-tag anomaly">异常</span>' : ''}</div>
-                        <div class="timeline-cost">${s.events} events</div>
-                        <div class="timeline-level ${err ? 'anomaly' : 'normal'}">${err ? '异常' : '正常'}</div>
-                    </div>`;
-                }).join('');
-            }
-        }
-
         // ==================== UI Handlers (from demo) ====================
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -3561,10 +3681,43 @@
         function showToolStats(name) { switchView('sessions'); }
 
         // ==================== Init ====================
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProblems();
-            loadAnalysis();
+        // Task 14: Page Load Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard loaded, fetching data...');
+
+            // Load initial data based on active view
+            const activeView = document.querySelector('.view-container.active');
+            if (activeView) {
+                const viewId = activeView.id;
+                if (viewId === 'sessions-view') {
+                    loadSessionsList();
+                } else if (viewId === 'problems-view') {
+                    loadProblemsList();
+                } else if (viewId === 'analysis-view') {
+                    loadAnalysisOverview();
+                }
+            }
+
+            // SSE connection for real-time notifications
+            const eventSource = new EventSource('/api/hooks/stream');
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateNotificationBadge(data);
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('SSE connection error:', error);
+            };
         });
+
+        // Helper function to update notification badge
+        function updateNotificationBadge(data) {
+            const badge = document.querySelector('.notification-badge');
+            if (badge && data) {
+                const currentCount = parseInt(badge.textContent.match(/\d+/)?.[0] || 0);
+                badge.textContent = `🔴 ${currentCount + 1} 条实时通知`;
+            }
+        }
     </script>
 </body>
 </html>
