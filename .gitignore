@@ -1,0 +1,32 @@
+# Binaries
+server/bin/
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude/OMC config
+.claude/
+.omc/
+server/.omc/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
