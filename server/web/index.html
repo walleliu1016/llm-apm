@@ -2687,10 +2687,10 @@
                             <h3 class="chart-title">成本归因 Top 10（点击跳转 Session）</h3>
                         </div>
                         <div class="cost-ranking">
-                            <!-- Cost rank items will be dynamically rendered by JavaScript -->
+                            <!-- 动态渲染占位 -->
                         </div>
-                        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
-                            Cost ranking will be loaded dynamically
+                        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);" class="cost-ranking-summary">
+                            <!-- 动态渲染占位 -->
                         </div>
                     </div>
 
@@ -2939,17 +2939,194 @@
             }
         }
 
-        async function loadAnalysisOverview() {
-            // Load multiple stats endpoints
-            const overview = await fetchAPI('/api/stats/overview');
-            const cache = await fetchAPI('/api/stats/cache');
-            const tools = await fetchAPI('/api/stats/tools');
+        async function loadAnalysisOverview(timeRange = 'today') {
+            // 并行加载所有API
+            const [overview, cache, tools, costRanking, ttft, turnEff, subagent] = await Promise.all([
+                fetchAPI(`/api/stats/overview?range=${timeRange}`),
+                fetchAPI(`/api/stats/cache?range=${timeRange}`),
+                fetchAPI(`/api/stats/tools?range=${timeRange}`),
+                fetchAPI(`/api/analysis/cost-ranking?range=${timeRange}`),
+                fetchAPI(`/api/analysis/ttft?range=${timeRange}`),
+                fetchAPI(`/api/analysis/turn-efficiency?range=${timeRange}`),
+                fetchAPI(`/api/analysis/subagent?range=${timeRange}`)
+            ]);
 
             renderAnalysisOverview({
                 overview: overview,
                 cache: cache,
                 tools: tools
             });
+
+            // 渲染所有子图表
+            if (costRanking) renderCostRanking(costRanking);
+            if (ttft) renderTTFTDistribution(ttft);
+            if (turnEff) renderTurnEfficiency(turnEff);
+            if (subagent) renderSubagentCost(subagent);
+        }
+
+        // ==================== Cost Ranking ====================
+        async function loadCostRanking(timeRange = 'today') {
+            const data = await fetchAPI(`/api/analysis/cost-ranking?range=${timeRange}`);
+            if (data && data.cost_ranking) {
+                renderCostRanking(data);
+            }
+        }
+
+        function renderCostRanking(data) {
+            const container = document.querySelector('.cost-ranking');
+            const summaryEl = document.querySelector('.cost-ranking-summary');
+
+            if (!container) return;
+
+            const items = data.cost_ranking || [];
+
+            if (items.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无数据</div>';
+                if (summaryEl) summaryEl.textContent = '无Session数据';
+                return;
+            }
+
+            // 渲染排名项
+            container.innerHTML = items.map(item => `
+                <div class="cost-rank-item" onclick="switchView('sessions')">
+                    <div class="cost-rank-position ${item.position_class}">${item.position}</div>
+                    <div class="cost-rank-info">
+                        <div class="cost-rank-session">Session: ${item.session_id}</div>
+                        <div class="cost-rank-meta">${item.meta}</div>
+                    </div>
+                    <div class="cost-rank-value">${item.cost}</div>
+                </div>
+            `).join('');
+
+            // 渲染摘要统计
+            if (summaryEl && data.summary) {
+                summaryEl.textContent = data.summary;
+            }
+        }
+
+        // ==================== TTFT Distribution ====================
+        async function loadTTFTDistribution(timeRange = 'today') {
+            const data = await fetchAPI(`/api/analysis/ttft?range=${timeRange}`);
+            if (data && data.ttft_distribution) {
+                renderTTFTDistribution(data);
+            }
+        }
+
+        function renderTTFTDistribution(data) {
+            const barsContainer = document.querySelector('.ttft-bars');
+            const statsContainer = document.querySelector('.ttft-stats');
+
+            if (!barsContainer) return;
+
+            const distribution = data.ttft_distribution || [];
+
+            if (distribution.length === 0) {
+                barsContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无TTFT数据</div>';
+                if (statsContainer) statsContainer.textContent = '无数据';
+                return;
+            }
+
+            // 渲染TTFT分布条
+            barsContainer.innerHTML = distribution.map(item => `
+                <div class="ttft-bar-row">
+                    <span class="ttft-label">${item.label}</span>
+                    <div class="ttft-bar-container">
+                        <div class="ttft-bar ${item.bar_class}" style="width: ${item.percentage};"></div>
+                    </div>
+                    <span class="ttft-count">${item.count}</span>
+                </div>
+            `).join('');
+
+            // 渲染统计信息
+            if (statsContainer && data.stats) {
+                statsContainer.textContent = data.stats;
+            }
+        }
+
+        // ==================== Turn Efficiency ====================
+        async function loadTurnEfficiency(timeRange = 'today') {
+            const data = await fetchAPI(`/api/analysis/turn-efficiency?range=${timeRange}`);
+            if (data && data.turn_efficiency) {
+                renderTurnEfficiency(data);
+            }
+        }
+
+        function renderTurnEfficiency(data) {
+            const cardsContainer = document.querySelector('.turn-efficiency-grid');
+            const warningContainer = document.querySelector('.turn-warning');
+
+            if (!cardsContainer) return;
+
+            const metrics = data.turn_efficiency || [];
+
+            if (metrics.length === 0) {
+                cardsContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无Turn数据</div>';
+                if (warningContainer) warningContainer.textContent = '';
+                return;
+            }
+
+            // 渲染效率卡片
+            cardsContainer.innerHTML = metrics.map(m => `
+                <div class="turn-eff-card">
+                    <div class="turn-eff-label">${m.label}</div>
+                    <div class="turn-eff-value" ${m.has_warning ? 'style="color: var(--accent-yellow);"' : ''}>${m.value}</div>
+                    <div class="turn-eff-desc">${m.desc}</div>
+                </div>
+            `).join('');
+
+            // 渲染警告信息
+            if (warningContainer && data.warning) {
+                warningContainer.textContent = data.warning;
+                warningContainer.style.color = 'var(--accent)';
+            }
+        }
+
+        // ==================== Subagent Cost ====================
+        async function loadSubagentCost(timeRange = 'today') {
+            const data = await fetchAPI(`/api/analysis/subagent?range=${timeRange}`);
+            if (data) {
+                renderSubagentCost(data);
+            }
+        }
+
+        function renderSubagentCost(data) {
+            const container = document.querySelector('.subagent-cost-bar');
+            const statsContainer = document.querySelector('.subagent-stats-container');
+
+            if (!container) return;
+
+            if (!data.main_agent || !data.subagent) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无Subagent数据</div>';
+                return;
+            }
+
+            // 渲染成本占比条
+            container.innerHTML = `
+                <div class="subagent-cost-main" style="width: ${data.main_agent.percentage};">
+                    ${data.main_agent.label}
+                </div>
+                <div class="subagent-cost-sub" style="width: ${data.subagent.percentage};">
+                    ${data.subagent.label}
+                </div>
+            `;
+
+            // 渲染统计信息
+            if (statsContainer && data.stats) {
+                statsContainer.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 12px;">Subagent 调用次数</span>
+                        <span style="font-size: 12px; font-weight: 600;">${data.stats.call_count}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 12px;">平均 Subagent 成本</span>
+                        <span style="font-size: 12px; font-weight: 600;">${data.stats.avg_cost}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px;">最深嵌套层级</span>
+                        <span style="font-size: 12px; font-weight: 600;">${data.stats.max_depth}</span>
+                    </div>
+                `;
+            }
         }
 
         // ==================== View switching ====================
@@ -3468,6 +3645,9 @@
             document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.querySelector('.time-range-picker').style.display = range === 'custom' ? 'flex' : 'none';
+
+            // 重新加载所有数据
+            loadAnalysisOverview(range);
         }
 
         function showToolStats(name) { switchView('sessions'); }

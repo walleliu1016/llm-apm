@@ -400,15 +400,94 @@ func (s *Server) handleAnalysisCache(w http.ResponseWriter, r *http.Request) {
 
 // handleAnalysisAnomalies returns anomaly distribution (mock for now).
 func (s *Server) handleAnalysisAnomalies(w http.ResponseWriter, r *http.Request) {
-	response := map[string]interface{}{
-		"total_count": "8",
-		"anomaly_types": []map[string]interface{}{
-			{"type": "工具失败", "count": 2, "legend_class": "error"},
-			{"type": "执行慢速", "count": 2, "legend_class": "slow"},
-			{"type": "成本过高", "count": 3, "legend_class": "cost"},
-			{"type": "其他异常", "count": 1, "legend_class": "other"},
-		},
+	timeRange := r.URL.Query().Get("range")
+	if timeRange == "" {
+		timeRange = "today"
 	}
+
+	interval := mapRangeToInterval(timeRange)
+
+	// 查询真实异常数据
+	sql := fmt.Sprintf(`
+		SELECT
+			anomaly_type,
+			severity,
+			COUNT(*) as count
+		FROM apm_anomalies
+		WHERE ts > now() - INTERVAL '%s'
+		GROUP BY anomaly_type, severity
+		ORDER BY count DESC
+	`, interval)
+
+	data, err := s.queryGreptimeDB(sql)
+	if err != nil {
+		http.Error(w, "query failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 解析查询结果
+	var rawRows [][]interface{}
+	json.Unmarshal(data, &rawRows)
+
+	if len(rawRows) == 0 {
+		response := map[string]interface{}{
+			"total_count": 0,
+			"anomaly_types": []map[string]interface{}{},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 映射 anomaly_type 到显示名称
+	typeMap := map[string]string{
+		"slow_tool":          "执行慢速",
+		"tool_failure":       "工具失败",
+		"high_cost":          "成本过高",
+		"error_spike":        "错误集中",
+		"cache_miss_spike":   "缓存失效",
+		"turn_inefficiency":  "Turn效率低",
+	}
+
+	// 映射 severity 到 legend_class
+	severityMap := map[string]string{
+		"critical": "error",
+		"high":     "slow",
+		"medium":   "cost",
+		"low":      "other",
+	}
+
+	anomalyTypes := []map[string]interface{}{}
+	totalCount := 0
+
+	for _, row := range rawRows {
+		anomalyType := row[0].(string)
+		severity := row[1].(string)
+		count := int(row[2].(float64))
+		totalCount += count
+
+		displayName := typeMap[anomalyType]
+		if displayName == "" {
+			displayName = anomalyType // 如果未映射，使用原始名称
+		}
+
+		legendClass := severityMap[severity]
+		if legendClass == "" {
+			legendClass = "other"
+		}
+
+		anomalyTypes = append(anomalyTypes, map[string]interface{}{
+			"type":         displayName,
+			"count":        count,
+			"legend_class": legendClass,
+		})
+	}
+
+	response := map[string]interface{}{
+		"total_count":   totalCount,
+		"anomaly_types": anomalyTypes,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -644,39 +723,199 @@ func (s *Server) handleAnalysisTools(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// handleAnalysisSubagent returns subagent cost distribution (mock for now).
+// handleAnalysisSubagent returns subagent cost distribution with real data.
 func (s *Server) handleAnalysisSubagent(w http.ResponseWriter, r *http.Request) {
+	timeRange := r.URL.Query().Get("range")
+	if timeRange == "" {
+		timeRange = "today"
+	}
+
+	interval := mapRangeToInterval(timeRange)
+
+	// 查询Subagent统计（基于agent_depth）
+	sql := fmt.Sprintf(`
+		SELECT
+			session_id,
+			agent_depth,
+			COUNT(*) as event_count
+		FROM apm_hook_events
+		WHERE ts > now() - INTERVAL '%s' AND agent_depth > 0
+		GROUP BY session_id, agent_depth
+		ORDER BY agent_depth DESC
+	`, interval)
+
+	data, err := s.queryGreptimeDB(sql)
+	if err != nil {
+		http.Error(w, "query failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var rawRows [][]interface{}
+	json.Unmarshal(data, &rawRows)
+
+	// 统计Subagent数量和最大深度
+	subagentSessions := make(map[string]int)
+	maxDepth := 0
+	totalSubagentEvents := 0
+
+	for _, row := range rawRows {
+		sessionID := row[0].(string)
+		depth := int(row[1].(float64))
+		eventCount := int(row[2].(float64))
+
+		subagentSessions[sessionID] = eventCount
+		totalSubagentEvents += eventCount
+		if depth > maxDepth {
+			maxDepth = depth
+		}
+	}
+
+	// 查询成本分布（从apm_messages估算）
+	costSQL := fmt.Sprintf(`
+		SELECT
+			SUM(input_tokens + output_tokens) as total_tokens
+		FROM apm_messages
+		WHERE ts > now() - INTERVAL '%s'
+	`, interval)
+
+	costData, err := s.queryGreptimeDB(costSQL)
+	if err != nil {
+		http.Error(w, "cost query failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var costRows [][]interface{}
+	json.Unmarshal(costData, &costRows)
+
+	totalTokens := 0
+	if len(costRows) > 0 && len(costRows[0]) > 0 {
+		totalTokens = int(costRows[0][0].(float64))
+	}
+
+	// 估算成本（Subagent占比简化为10%）
+	totalCost := float64(totalTokens) * 0.00003
+	subagentCostEstimate := totalCost * 0.1 // 简化估算：10%
+	mainCost := totalCost - subagentCostEstimate
+
+	mainPercent := 0.0
+	subagentPercent := 0.0
+	if totalCost > 0 {
+		mainPercent = (mainCost / totalCost) * 100
+		subagentPercent = (subagentCostEstimate / totalCost) * 100
+	}
+
+	callCount := len(subagentSessions)
+	avgCost := 0.0
+	if callCount > 0 {
+		avgCost = subagentCostEstimate / float64(callCount)
+	}
+
 	response := map[string]interface{}{
 		"main_agent": map[string]interface{}{
-			"cost":       "$9.26",
-			"percentage": "75%",
-			"label":      "Main Agent: $9.26 (75%)",
+			"cost":       fmt.Sprintf("$%.2f", mainCost),
+			"percentage": fmt.Sprintf("%.0f%%", mainPercent),
+			"label":      fmt.Sprintf("Main Agent: $%.2f (%.0f%%)", mainCost, mainPercent),
 		},
 		"subagent": map[string]interface{}{
-			"cost":       "$3.09",
-			"percentage": "25%",
-			"label":      "Subagent: $3.09 (25%)",
+			"cost":       fmt.Sprintf("$%.2f", subagentCostEstimate),
+			"percentage": fmt.Sprintf("%.0f%%", subagentPercent),
+			"label":      fmt.Sprintf("Subagent: $%.2f (%.0f%%)", subagentCostEstimate, subagentPercent),
 		},
 		"stats": map[string]interface{}{
-			"call_count": "12",
-			"avg_cost":   "$0.26",
-			"max_depth":  "2",
+			"call_count": callCount,
+			"avg_cost":   fmt.Sprintf("$%.2f", avgCost),
+			"max_depth":  maxDepth,
 		},
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
-// handleAnalysisTurnEfficiency returns turn efficiency metrics (mock for now).
+// handleAnalysisTurnEfficiency returns turn efficiency metrics with real data from apm_turns.
 func (s *Server) handleAnalysisTurnEfficiency(w http.ResponseWriter, r *http.Request) {
+	timeRange := r.URL.Query().Get("range")
+	if timeRange == "" {
+		timeRange = "today"
+	}
+
+	interval := mapRangeToInterval(timeRange)
+
+	// 查询Turn效率指标
+	sql := fmt.Sprintf(`
+		SELECT
+			COUNT(*) as total_turns,
+			COUNT(DISTINCT session_id) as session_count,
+			AVG(tool_count) as avg_tools,
+			SUM(input_tokens) as total_input,
+			SUM(output_tokens) as total_output
+		FROM apm_turns
+		WHERE ts > now() - INTERVAL '%s'
+	`, interval)
+
+	data, err := s.queryGreptimeDB(sql)
+	if err != nil {
+		http.Error(w, "query failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var rawRows [][]interface{}
+	json.Unmarshal(data, &rawRows)
+
+	if len(rawRows) == 0 || len(rawRows[0]) < 5 {
+		response := map[string]interface{}{
+			"turn_efficiency": []map[string]interface{}{},
+			"warning":         "",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	totalTurns := int(rawRows[0][0].(float64))
+	sessionCount := int(rawRows[0][1].(float64))
+	avgTools := rawRows[0][2].(float64)
+	totalInput := int(rawRows[0][3].(float64))
+	totalOutput := int(rawRows[0][4].(float64))
+
+	// 计算效率指标
+	avgTurnsPerSession := float64(totalTurns) / float64(sessionCount)
+
+	var inputOutputRatio float64
+	if totalOutput > 0 {
+		inputOutputRatio = float64(totalInput) / float64(totalOutput)
+	} else {
+		inputOutputRatio = 0
+	}
+
+	// 判断是否需要警告
+	hasWarning := inputOutputRatio > 2.0
+
 	response := map[string]interface{}{
 		"turn_efficiency": []map[string]interface{}{
-			{"label": "平均 Turns/Session", "value": "3.2", "desc": "理想: 2-4"},
-			{"label": "平均工具/Turn", "value": "4.5", "desc": "理想: 3-6"},
-			{"label": "输入/输出比", "value": "2.8", "desc": "理想: 1-2", "has_warning": true},
+			{
+				"label": "平均 Turns/Session",
+				"value": fmt.Sprintf("%.1f", avgTurnsPerSession),
+				"desc":  "理想: 2-4",
+			},
+			{
+				"label": "平均工具/Turn",
+				"value": fmt.Sprintf("%.1f", avgTools),
+				"desc":  "理想: 3-6",
+			},
+			{
+				"label":       "输入/输出比",
+				"value":       fmt.Sprintf("%.1f", inputOutputRatio),
+				"desc":        "理想: 1-2",
+				"has_warning": hasWarning,
+			},
 		},
-		"warning": "⚠️ 输入/输出比偏高，提示可能有冗余上下文",
 	}
+
+	if hasWarning {
+		response["warning"] = "⚠️ 输入/输出比偏高，提示可能有冗余上下文"
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
