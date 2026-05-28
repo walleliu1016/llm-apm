@@ -39,35 +39,40 @@ func main() {
 
 	logger.Info("starting llm-apm-server",
 		"port", cfg.Port,
-		"data_dir", cfg.DataDir)
+		"data_dir", cfg.DataDir,
+		"greptime_host", cfg.GreptimeDBHost,
+		"greptime_embedded", cfg.GreptimeEmbedded)
 
-	// Start GreptimeDB
-	greptime := greptimedb.NewProcess(cfg.DataDir,
-		cfg.GreptimeHTTPPort, cfg.GreptimeGRPCPort, cfg.GreptimeMySQLPort, logger)
+	// Start GreptimeDB (only if embedded mode is enabled)
+	var greptime *greptimedb.Process
+	if cfg.GreptimeEmbedded {
+		greptime = greptimedb.NewProcess(cfg.DataDir,
+			cfg.GreptimeHTTPPort, cfg.GreptimeGRPCPort, cfg.GreptimeMySQLPort, logger)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	if err := greptime.Start(ctx); err != nil {
-		logger.Error("failed to start GreptimeDB", "error", err)
-		os.Exit(1)
+		if err := greptime.Start(ctx); err != nil {
+			logger.Error("failed to start GreptimeDB", "error", err)
+			os.Exit(1)
+		}
 	}
 
-	// Init tables
-	if err := greptimedb.InitTables(cfg.GreptimeHTTPPort); err != nil {
+	// Init tables (use configured host)
+	if err := greptimedb.InitTablesAt(cfg.GreptimeDBHost, cfg.GreptimeHTTPPort); err != nil {
 		logger.Error("failed to init tables", "error", err)
 		os.Exit(1)
 	}
 
-	// Create handler server
-	srv := handler.NewServer("127.0.0.1", cfg.GreptimeHTTPPort, logger)
+	// Create handler server (use configured host)
+	srv := handler.NewServer(cfg.GreptimeDBHost, cfg.GreptimeHTTPPort, logger)
 
-	// Create turn tracker
-	turnTracker := turn.NewTrackerWithDB("127.0.0.1", cfg.GreptimeHTTPPort, logger)
+	// Create turn tracker (use configured host)
+	turnTracker := turn.NewTrackerWithDB(cfg.GreptimeDBHost, cfg.GreptimeHTTPPort, logger)
 	srv.SetTurnTracker(turnTracker)
 
-	// Create transcript watcher
-	watcher := transcript.NewWatcher("127.0.0.1", cfg.GreptimeHTTPPort, logger)
+	// Create transcript watcher (use configured host)
+	watcher := transcript.NewWatcher(cfg.GreptimeDBHost, cfg.GreptimeHTTPPort, logger)
 	srv.SetTranscriptWatcher(watcher)
 
 	// Setup HTTP routes
@@ -100,7 +105,9 @@ func main() {
 	defer shutdownCancel()
 
 	httpSrv.Shutdown(shutdownCtx)
-	greptime.Stop()
+	if greptime != nil {
+		greptime.Stop()
+	}
 	watcher.StopAll()
 
 	logger.Info("server stopped")

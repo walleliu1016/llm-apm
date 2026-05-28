@@ -195,6 +195,26 @@ cd llm-apm
 | GreptimeDB HTTP | 4000 | `APM_GREPTIMEDB_HTTP_PORT` |
 | GreptimeDB MySQL | 14002 | `APM_GREPTIMEDB_MYSQL_PORT` |
 
+### 远程 GreptimeDB 配置
+
+如需使用远程 GreptimeDB，设置以下环境变量：
+
+```bash
+# 远程 GreptimeDB 主机地址
+export APM_GREPTIMEDB_HOST=192.168.1.100
+
+# 禁用嵌入式 GreptimeDB 进程启动
+export APM_GREPTIMEDB_EMBEDDED=false
+
+# 远程 GreptimeDB HTTP 端口
+export APM_GREPTIMEDB_HTTP_PORT=4000
+
+# 启动服务
+./start.sh
+```
+
+服务启动时会自动检测并创建所需数据表（使用 `CREATE TABLE IF NOT EXISTS`）。
+
 ---
 
 ## 项目结构

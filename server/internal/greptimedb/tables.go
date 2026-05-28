@@ -88,9 +88,14 @@ func CreateTablesSQL() []string {
 	}
 }
 
-// InitTables creates all required tables in GreptimeDB.
+// InitTables creates all required tables in GreptimeDB (localhost).
 func InitTables(httpPort int) error {
-	sqlURL := fmt.Sprintf("http://127.0.0.1:%d/v1/sql", httpPort)
+	return InitTablesAt("127.0.0.1", httpPort)
+}
+
+// InitTablesAt creates all required tables in GreptimeDB at specified host.
+func InitTablesAt(host string, httpPort int) error {
+	sqlURL := fmt.Sprintf("http://%s:%d/v1/sql", host, httpPort)
 
 	for _, sql := range CreateTablesSQL() {
 		if err := execSQL(sqlURL, sql); err != nil {
