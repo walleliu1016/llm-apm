@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -120,6 +121,28 @@ func (s *Server) queryGreptimeDB(sql string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	return io.ReadAll(resp.Body)
+}
+
+// parseGreptimeRows extracts rows from GreptimeDB response structure.
+// GreptimeDB returns: {"output":[{"records":{"schema":..., "rows":[[...], ...]}}]}
+func parseGreptimeRows(rawData []byte) ([][]interface{}, error) {
+	var greptimeResp struct {
+		Output []struct {
+			Records struct {
+				Rows [][]interface{} `json:"rows"`
+			} `json:"records"`
+		} `json:"output"`
+	}
+
+	if err := json.Unmarshal(rawData, &greptimeResp); err != nil {
+		return nil, err
+	}
+
+	if len(greptimeResp.Output) == 0 {
+		return [][]interface{}{}, nil
+	}
+
+	return greptimeResp.Output[0].Records.Rows, nil
 }
 
 func mapRangeToInterval(rangeParam string) string {

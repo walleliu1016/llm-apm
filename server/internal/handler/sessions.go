@@ -183,7 +183,7 @@ func extractProjectName(cwd string) string {
 	return base
 }
 
-// handleSessionDetail returns session detail.
+// handleSessionDetail returns session detail with events timeline.
 func (s *Server) handleSessionDetail(w http.ResponseWriter, r *http.Request) {
 	// Extract session_id from path
 	path := r.URL.Path
@@ -217,7 +217,29 @@ func (s *Server) handleSessionDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formatted, err := formatSessionDetailResponse(data, sessionID)
+	// Query events timeline for this session
+	eventsSQL := fmt.Sprintf(`
+		SELECT
+			ts,
+			event_type,
+			tool_name,
+			tool_input,
+			tool_result,
+			error_flag,
+			agent_id,
+			agent_depth
+		FROM apm_hook_events
+		WHERE session_id = '%s'
+		ORDER BY ts ASC
+	`, sessionID)
+
+	eventsData, err := s.queryGreptimeDB(eventsSQL)
+	if err != nil {
+		http.Error(w, "events query failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	formatted, err := formatSessionDetailResponse(data, eventsData, sessionID)
 	if err != nil {
 		http.Error(w, "format failed: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -227,8 +249,8 @@ func (s *Server) handleSessionDetail(w http.ResponseWriter, r *http.Request) {
 	w.Write(formatted)
 }
 
-// formatSessionDetailResponse formats session detail response.
-func formatSessionDetailResponse(rawData []byte, sessionID string) ([]byte, error) {
+// formatSessionDetailResponse formats session detail response with events.
+func formatSessionDetailResponse(rawData []byte, eventsData []byte, sessionID string) ([]byte, error) {
 	var greptimeResp struct {
 		Output []struct {
 			Records struct {
@@ -250,6 +272,7 @@ func formatSessionDetailResponse(rawData []byte, sessionID string) ([]byte, erro
 			"duration":     "-",
 			"total_cost":   "$0.00",
 			"project":      "-",
+			"events":       []map[string]interface{}{},
 		}
 		return json.Marshal(response)
 	}
@@ -309,6 +332,9 @@ func formatSessionDetailResponse(rawData []byte, sessionID string) ([]byte, erro
 	// Calculate cost (simplified: $0.05 per tool call)
 	cost := fmt.Sprintf("$%.2f", float64(toolCount)*0.05)
 
+	// Parse events data
+	events := parseEventsData(eventsData)
+
 	response := map[string]interface{}{
 		"session_id":   sessionID,
 		"status":       "completed",
@@ -320,7 +346,80 @@ func formatSessionDetailResponse(rawData []byte, sessionID string) ([]byte, erro
 		"error_count":  errorCount,
 		"project":      projectName,
 		"cwd":          cwd,
+		"events":       events,
 	}
 
 	return json.Marshal(response)
+}
+
+// parseEventsData parses events timeline data from GreptimeDB.
+func parseEventsData(eventsData []byte) []map[string]interface{} {
+	var greptimeResp struct {
+		Output []struct {
+			Records struct {
+				Rows [][]interface{} `json:"rows"`
+			} `json:"records"`
+		} `json:"output"`
+	}
+
+	if err := json.Unmarshal(eventsData, &greptimeResp); err != nil {
+		return []map[string]interface{}{}
+	}
+
+	if len(greptimeResp.Output) == 0 || len(greptimeResp.Output[0].Records.Rows) == 0 {
+		return []map[string]interface{}{}
+	}
+
+	events := []map[string]interface{}{}
+	for idx, row := range greptimeResp.Output[0].Records.Rows {
+		// Handle timestamp
+		var ts time.Time
+		switch v := row[0].(type) {
+		case string:
+			if parsed, err := time.Parse(time.RFC3339, v); err == nil {
+				ts = parsed
+			}
+		case float64:
+			ts = time.Unix(int64(v/1000), 0)
+		}
+
+		eventType, _ := row[1].(string)
+		toolName, _ := row[2].(string)
+		toolInput, _ := row[3].(string)
+		toolResult, _ := row[4].(string)
+
+		var errorFlag bool
+		switch v := row[5].(type) {
+		case bool:
+			errorFlag = v
+		case float64:
+			errorFlag = v == 1
+		case int:
+			errorFlag = v == 1
+		}
+
+		agentID, _ := row[6].(string)
+		var agentDepth int
+		switch v := row[7].(type) {
+		case float64:
+			agentDepth = int(v)
+		case int:
+			agentDepth = v
+		}
+
+		event := map[string]interface{}{
+			"idx":         idx,
+			"ts":          ts.Format(time.RFC3339),
+			"event_type":  eventType,
+			"tool_name":   toolName,
+			"tool_input":  toolInput,
+			"tool_result": toolResult,
+			"error_flag":  errorFlag,
+			"agent_id":    agentID,
+			"agent_depth": agentDepth,
+		}
+		events = append(events, event)
+	}
+
+	return events
 }

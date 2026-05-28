@@ -646,6 +646,7 @@
         .timeline-block.tool { background: var(--accent-blue); }
         .timeline-block.thinking { background: #6b5b95; }
         .timeline-block.error { background: var(--accent); }
+        .timeline-block.slow { background: var(--accent-yellow); color: #333; }
         .timeline-block.user { background: var(--accent-green); }
 
         .timeline-tooltip {
@@ -1043,6 +1044,256 @@
             margin-bottom: 4px;
         }
 
+        /* ===== Transcripts-style Tool Display ===== */
+
+        /* Thinking block */
+        .thinking-block {
+            background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%);
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .thinking-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #f57c00;
+            margin-bottom: 8px;
+        }
+
+        /* Truncatable mechanism */
+        .truncatable {
+            position: relative;
+        }
+        .truncatable.truncated .truncatable-content {
+            max-height: 200px;
+            overflow: hidden;
+        }
+        .truncatable.truncated::after {
+            content: '';
+            position: absolute;
+            bottom: 35px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, var(--bg-primary));
+            pointer-events: none;
+        }
+        .expand-btn {
+            display: none;
+            width: 100%;
+            padding: 6px 12px;
+            margin-top: 4px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--accent-blue);
+            text-align: center;
+        }
+        .truncatable.truncated .expand-btn,
+        .truncatable.expanded .expand-btn {
+            display: block;
+        }
+        .expand-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        .truncatable:not(.truncated):not(.expanded) .expand-btn {
+            display: none;
+        }
+
+        /* Edit diff styles */
+        .edit-section {
+            display: flex;
+            margin: 6px 0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .edit-label {
+            padding: 8px 12px;
+            font-weight: bold;
+            font-family: monospace;
+            display: flex;
+            align-items: flex-start;
+            font-size: 12px;
+            min-width: 30px;
+        }
+        .edit-old {
+            background: rgba(239, 68, 68, 0.15);
+            border-left: 3px solid #ef4444;
+        }
+        .edit-old .edit-label {
+            color: #dc2626;
+            background: rgba(239, 68, 68, 0.3);
+        }
+        .edit-old .edit-content {
+            color: #991b1b;
+        }
+        .edit-new {
+            background: rgba(34, 197, 94, 0.15);
+            border-left: 3px solid #22c55e;
+        }
+        .edit-new .edit-label {
+            color: #16a34a;
+            background: rgba(34, 197, 94, 0.3);
+        }
+        .edit-new .edit-content {
+            color: #15803d;
+        }
+        .edit-content {
+            margin: 0;
+            flex: 1;
+            background: transparent;
+            font-size: 11px;
+            padding: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* File tool styles */
+        .file-tool-header {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .file-tool-icon {
+            font-size: 14px;
+        }
+        .file-tool-path {
+            font-family: monospace;
+            background: rgba(102, 126, 234, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-blue);
+        }
+        .file-tool-fullpath {
+            font-family: monospace;
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+        .edit-replace-all {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* Bash command styles */
+        .bash-command {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--accent-green);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .tool-description {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        /* Todo list styles */
+        .todo-list {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(74, 222, 128, 0.1) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+        .todo-header {
+            font-weight: 600;
+            color: #16a34a;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .todo-items {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            font-size: 11px;
+        }
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+        .todo-icon {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 50%;
+            font-size: 10px;
+        }
+        .todo-completed .todo-icon {
+            color: #16a34a;
+            background: rgba(34, 197, 94, 0.2);
+        }
+        .todo-completed .todo-content {
+            color: #15803d;
+            text-decoration: line-through;
+        }
+        .todo-in-progress .todo-icon {
+            color: #f57c00;
+            background: rgba(245, 124, 0, 0.2);
+        }
+        .todo-in-progress .todo-content {
+            color: #e65100;
+            font-weight: 500;
+        }
+        .todo-pending .todo-icon {
+            color: var(--text-secondary);
+            background: rgba(0,0,0,0.1);
+        }
+
+        /* Commit card */
+        .commit-card {
+            margin: 8px 0;
+            padding: 10px 14px;
+            background: rgba(255, 152, 0, 0.1);
+            border-left: 4px solid #ff9800;
+            border-radius: 6px;
+        }
+        .commit-card-hash {
+            font-family: monospace;
+            color: #e65100;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        /* Image block */
+        .image-block {
+            margin: 8px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 300px;
+        }
+        .image-block img {
+            max-width: 100%;
+            border-radius: 6px;
+        }
+
         /* LLM detail panel */
         .llm-detail {
             display: none;
@@ -1412,6 +1663,137 @@
             margin-top: 4px;
         }
 
+        /* Tool Heatmap Container (Full Width) */
+        .tool-heatmap-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .tool-heatmap-item {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 8px;
+            min-width: 120px;
+            flex: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .tool-heatmap-item:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        .tool-heatmap-item.selected {
+            border-color: var(--accent);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .tool-item-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tool-item-icon {
+            font-size: 16px;
+        }
+
+        .tool-item-count {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .tool-item-count.high { color: var(--accent-blue); }
+        .tool-item-count.medium { color: var(--accent-yellow); }
+        .tool-item-count.low { color: var(--text-secondary); }
+
+        .tool-item-rate {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .tool-item-rate.success { color: var(--accent-green); }
+        .tool-item-rate.warning { color: var(--accent-yellow); }
+        .tool-item-rate.error { color: var(--accent); }
+
+        .tool-item-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Tool Detail Panel */
+        .tool-detail-panel {
+            margin-top: 16px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .tool-detail-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tool-detail-icon {
+            font-size: 18px;
+        }
+
+        .tool-detail-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .tool-detail-stats {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 12px;
+        }
+
+        .tool-stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .tool-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tool-stat-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .tool-stat-value.error { color: var(--accent); }
+        .tool-stat-value.warning { color: var(--accent-yellow); }
+
+        .tool-common-failures {
+            font-size: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .failures-label {
+            color: var(--text-secondary);
+            margin-right: 8px;
+        }
+
+        .failures-content {
+            color: var(--text-primary);
+        }
+
         .heatmap-value.high { color: var(--accent); }
         .heatmap-value.medium { color: var(--accent-yellow); }
         .heatmap-value.low { color: var(--accent-green); }
@@ -1477,33 +1859,98 @@
 
         /* Model Distribution */
         .model-dist-chart {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            height: 160px;
             margin-top: 16px;
-            padding-bottom: 30px;
+            padding: 0;
         }
 
-        .model-bar {
+        .model-list-container {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            min-width: 50px;
+            gap: 12px;
         }
 
-        .model-bar-inner {
-            width: 40px;
-            border-radius: 4px 4px 0 0;
+        .model-row {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 12px 16px;
             display: flex;
-            justify-content: center;
-            padding-top: 8px;
+            align-items: center;
+            gap: 16px;
         }
 
-        .model-bar-label {
+        .model-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .model-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .model-badge {
             font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .model-badge-opus { background: #7c3aed; color: white; }
+        .model-badge-sonnet { background: #3b82f6; color: white; }
+        .model-badge-haiku { background: #10b981; color: white; }
+        .model-badge-gpt { background: #f59e0b; color: white; }
+        .model-badge-glm { background: #ef4444; color: white; }
+        .model-badge-other { background: #6b7280; color: white; }
+
+        .model-stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+            font-size: 12px;
             color: var(--text-secondary);
-            margin-top: 8px;
+        }
+
+        .model-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .model-stat-icon {
+            font-size: 10px;
+        }
+
+        .model-bar-container {
+            width: 120px;
+            height: 24px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .model-bar-fill-opus { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+        .model-bar-fill-sonnet { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .model-bar-fill-haiku { background: linear-gradient(90deg, #10b981, #34d399); }
+        .model-bar-fill-gpt { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .model-bar-fill-glm { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .model-bar-fill-other { background: linear-gradient(90deg, #6b7280, #9ca3af); }
+
+        .model-percentage {
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 50px;
+            text-align: right;
         }
 
         .model-bar-value {
@@ -1516,6 +1963,7 @@
         .model-bar-opus { background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%); }
         .model-bar-haiku { background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%); }
         .model-bar-gpt { background: linear-gradient(180deg, #43e97b 0%, #38f9d7 100%); }
+        .model-bar-other { background: linear-gradient(180deg, #a8edea 0%, #fed6e3 100%); }
 
         /* Cache Efficiency */
         .cache-stats {
@@ -1796,8 +2244,8 @@
     <header class="header">
         <div class="logo">LLM-APM</div>
         <nav class="nav-tabs">
-            <button class="nav-tab" data-view="sessions">Sessions</button>
-            <button class="nav-tab active" data-view="problems">Problems</button>
+            <button class="nav-tab active" data-view="sessions">Sessions</button>
+            <button class="nav-tab" data-view="problems">Problems</button>
             <button class="nav-tab" data-view="analysis">Analysis</button>
         </nav>
         <div class="notification-area">
@@ -1825,7 +2273,7 @@
 
     <main class="main-content">
         <!-- ==================== SESSIONS VIEW ==================== -->
-        <div class="view-container" id="sessions-view">
+        <div class="view-container active" id="sessions-view">
             <div class="sessions-layout">
                 <aside class="sessions-list">
                     <div class="sessions-header">
@@ -2413,7 +2861,7 @@
         </div>
 
         <!-- ==================== PROBLEMS VIEW ==================== -->
-        <div class="view-container active" id="problems-view">
+        <div class="view-container" id="problems-view">
             <div class="problems-layout">
                 <aside class="problems-list">
                     <div class="problems-header">
@@ -2589,33 +3037,9 @@
                             <h3 class="chart-title">模型 Token 分布</h3>
                         </div>
                         <div class="model-dist-chart">
-                            <div class="model-bar">
-                                <div class="model-bar-inner model-bar-sonnet" style="height: 96px;">
-                                    <span class="model-bar-value">45%</span>
-                                </div>
-                                <span class="model-bar-label">Sonnet</span>
+                            <div class="model-list-container">
+                                <!-- Dynamic model rows will be rendered here -->
                             </div>
-                            <div class="model-bar">
-                                <div class="model-bar-inner model-bar-opus" style="height: 40px;">
-                                    <span class="model-bar-value">25%</span>
-                                </div>
-                                <span class="model-bar-label">Opus</span>
-                            </div>
-                            <div class="model-bar">
-                                <div class="model-bar-inner model-bar-haiku" style="height: 24px;">
-                                    <span class="model-bar-value">15%</span>
-                                </div>
-                                <span class="model-bar-label">Haiku</span>
-                            </div>
-                            <div class="model-bar">
-                                <div class="model-bar-inner model-bar-gpt" style="height: 24px;">
-                                    <span class="model-bar-value">15%</span>
-                                </div>
-                                <span class="model-bar-label">GPT-4</span>
-                            </div>
-                        </div>
-                        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
-                            Sonnet 成本占比: 35% | Opus 成本占比: 45% (单价更高)
                         </div>
                     </div>
                 </div>
@@ -2687,37 +3111,10 @@
                             <h3 class="chart-title">TTFT 分布（首字节延迟）</h3>
                         </div>
                         <div class="ttft-bars">
-                            <div class="ttft-bar-row">
-                                <span class="ttft-label">&lt;0.5s</span>
-                                <div class="ttft-bar-container">
-                                    <div class="ttft-bar fast" style="width: 45%;"></div>
-                                </div>
-                                <span class="ttft-count">28</span>
-                            </div>
-                            <div class="ttft-bar-row">
-                                <span class="ttft-label">0.5-1s</span>
-                                <div class="ttft-bar-container">
-                                    <div class="ttft-bar normal" style="width: 35%;"></div>
-                                </div>
-                                <span class="ttft-count">22</span>
-                            </div>
-                            <div class="ttft-bar-row">
-                                <span class="ttft-label">1-2s</span>
-                                <div class="ttft-bar-container">
-                                    <div class="ttft-bar slow" style="width: 15%;"></div>
-                                </div>
-                                <span class="ttft-count">10</span>
-                            </div>
-                            <div class="ttft-bar-row">
-                                <span class="ttft-label">&gt;2s</span>
-                                <div class="ttft-bar-container">
-                                    <div class="ttft-bar very-slow" style="width: 5%;"></div>
-                                </div>
-                                <span class="ttft-count">3</span>
-                            </div>
+                            <!-- 动态渲染占位 -->
                         </div>
-                        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
-                            平均 TTFT: 0.8s | p95: 1.5s | p99: 2.8s
+                        <div class="ttft-stats" style="margin-top: 12px; font-size: 11px; color: var(--text-secondary);">
+                            <!-- 动态渲染占位 -->
                         </div>
                     </div>
                 </div>
@@ -2743,26 +3140,10 @@
                             <h3 class="chart-title">Subagent 成本占比</h3>
                         </div>
                         <div class="subagent-cost-bar">
-                            <div class="subagent-cost-main" style="width: 75%;">
-                                Main Agent: $9.26 (75%)
-                            </div>
-                            <div class="subagent-cost-sub" style="width: 25%;">
-                                Subagent: $3.09 (25%)
-                            </div>
+                            <!-- 动态渲染占位 -->
                         </div>
-                        <div style="margin-top: 16px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="font-size: 12px;">Subagent 调用次数</span>
-                                <span style="font-size: 12px; font-weight: 600;">12</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="font-size: 12px;">平均 Subagent 成本</span>
-                                <span style="font-size: 12px; font-weight: 600;">$0.26</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="font-size: 12px;">最深嵌套层级</span>
-                                <span style="font-size: 12px; font-weight: 600;">2</span>
-                            </div>
+                        <div class="subagent-stats-container" style="margin-top: 16px;">
+                            <!-- 动态渲染占位 -->
                         </div>
                     </div>
 
@@ -2772,125 +3153,46 @@
                             <h3 class="chart-title">Turn 效率分析</h3>
                         </div>
                         <div class="turn-efficiency-grid">
-                            <div class="turn-eff-card">
-                                <div class="turn-eff-label">平均 Turns/Session</div>
-                                <div class="turn-eff-value">3.2</div>
-                                <div class="turn-eff-desc">理想: 2-4</div>
-                            </div>
-                            <div class="turn-eff-card">
-                                <div class="turn-eff-label">平均工具/Turn</div>
-                                <div class="turn-eff-value">4.5</div>
-                                <div class="turn-eff-desc">理想: 3-6</div>
-                            </div>
-                            <div class="turn-eff-card">
-                                <div class="turn-eff-label">输入/输出比</div>
-                                <div class="turn-eff-value" style="color: var(--accent-yellow);">2.8</div>
-                                <div class="turn-eff-desc">理想: 1-2</div>
-                            </div>
+                            <!-- 动态渲染占位 -->
                         </div>
-                        <div style="margin-top: 12px; font-size: 11px; color: var(--accent);">
-                            ⚠️ 输入/输出比偏高，提示可能有冗余上下文
+                        <div class="turn-warning" style="margin-top: 12px; font-size: 11px; color: var(--accent);">
+                            <!-- 动态渲染占位 -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 4: Tool Heatmap (Enhanced) + Agent Comparison -->
+                <!-- Row 4: Tool Heatmap (Full Width) -->
                 <div class="analysis-chart-section">
                     <!-- Tool Heatmap Enhanced -->
-                    <div class="chart-card span-2">
+                    <div class="chart-card span-3">
                         <div class="chart-header">
-                            <h3 class="chart-title">工具调用详情（点击查看详情）</h3>
+                            <h3 class="chart-title">工具调用详情</h3>
                         </div>
-                        <div class="heatmap-grid" style="margin-top: 16px; grid-template-columns: repeat(7, 1fr);">
-                            <div class="heatmap-cell" onclick="showToolStats('read')">
-                                <div class="heatmap-label">Read</div>
-                                <div class="heatmap-value high">156</div>
-                                <div style="font-size: 10px; color: var(--accent-green);">✓ 98%</div>
-                                <div style="font-size: 10px; color: var(--text-secondary);">avg 1.5s</div>
-                            </div>
-                            <div class="heatmap-cell" onclick="showToolStats('edit')">
-                                <div class="heatmap-label">Edit</div>
-                                <div class="heatmap-value high">89</div>
-                                <div style="font-size: 10px; color: var(--accent-green);">✓ 95%</div>
-                                <div style="font-size: 10px; color: var(--text-secondary);">avg 0.8s</div>
-                            </div>
-                            <div class="heatmap-cell" onclick="showToolStats('write')">
-                                <div class="heatmap-label">Write</div>
-                                <div class="heatmap-value medium">45</div>
-                                <div style="font-size: 10px; color: var(--accent-green);">✓ 100%</div>
-                                <div style="font-size: 10px; color: var(--text-secondary);">avg 1.2s</div>
-                            </div>
-                            <div class="heatmap-cell" onclick="showToolStats('bash')">
-                                <div class="heatmap-label">Bash</div>
-                                <div class="heatmap-value high">78</div>
-                                <div style="font-size: 10px; color: var(--accent);">⚠ 85%</div>
-                                <div style="font-size: 10px; color: var(--accent-yellow);">avg 5.2s</div>
-                            </div>
-                            <div class="heatmap-cell" onclick="showToolStats('grep')">
-                                <div class="heatmap-label">Grep</div>
-                                <div class="heatmap-value medium">32</div>
-                                <div style="font-size: 10px; color: var(--accent-green);">✓ 100%</div>
-                                <div style="font-size: 10px; color: var(--text-secondary);">avg 0.5s</div>
-                            </div>
-                            <div class="heatmap-cell" onclick="showToolStats('agent')">
-                                <div class="heatmap-label">Agent</div>
-                                <div class="heatmap-value low">12</div>
-                                <div style="font-size: 10px; color: var(--accent-green);">✓ 92%</div>
-                                <div style="font-size: 10px; color: var(--text-secondary);">avg 12s</div>
-                            </div>
-                            <div class="heatmap-cell">
-                                <div class="heatmap-label">其他</div>
-                                <div class="heatmap-value low">8</div>
-                                <div style="font-size: 10px; color: var(--accent-green);">✓ 100%</div>
-                                <div style="font-size: 10px; color: var(--text-secondary);">avg 0.3s</div>
-                            </div>
+                        <div class="tool-heatmap-container">
+                            <!-- Dynamic content rendered by JavaScript -->
                         </div>
-                        <div style="margin-top: 16px; padding: 12px; background: var(--bg-card); border-radius: 4px;">
-                            <div style="font-size: 12px; margin-bottom: 8px;">📋 Bash 工具详情</div>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11px;">
-                                <div>失败次数: <span style="color: var(--accent);">12</span></div>
-                                <div>超时次数: <span style="color: var(--accent-yellow);">5</span></div>
-                                <div>用户批准: <span>28</span></div>
+                        <div class="tool-detail-panel">
+                            <div class="tool-detail-header">
+                                <span class="tool-detail-icon">📋</span>
+                                <span class="tool-detail-title">Bash 工具详情</span>
                             </div>
-                            <div style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
-                                常见失败: 权限拒绝 (4), 命令不存在 (3), 网络超时 (5)
+                            <div class="tool-detail-stats">
+                                <div class="tool-stat-item">
+                                    <span class="tool-stat-label">失败次数</span>
+                                    <span class="tool-stat-value error">-</span>
+                                </div>
+                                <div class="tool-stat-item">
+                                    <span class="tool-stat-label">超时次数</span>
+                                    <span class="tool-stat-value warning">-</span>
+                                </div>
+                                <div class="tool-stat-item">
+                                    <span class="tool-stat-label">用户批准</span>
+                                    <span class="tool-stat-value">-</span>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Agent Comparison -->
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3 class="chart-title">Agent 性能对比</h3>
-                        </div>
-                        <div style="margin-top: 16px;">
-                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); border-radius: 4px 4px 0 0;">
-                                <span>Agent</span>
-                                <span style="text-align: center;">Sessions</span>
-                                <span style="text-align: center;">Avg Cost</span>
-                                <span style="text-align: center;">Avg TTFT</span>
-                                <span style="text-align: center;">Errors</span>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; background: var(--bg-primary); border-radius: 0;">
-                                <span>Claude Code</span>
-                                <span style="text-align: center;">45</span>
-                                <span style="text-align: center;">$1.20</span>
-                                <span style="text-align: center;">0.8s</span>
-                                <span style="text-align: center; color: var(--accent);">5</span>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; background: var(--bg-primary); border-radius: 0;">
-                                <span>Codex</span>
-                                <span style="text-align: center;">28</span>
-                                <span style="text-align: center;">$0.85</span>
-                                <span style="text-align: center;">1.2s</span>
-                                <span style="text-align: center; color: var(--accent);">2</span>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr repeat(4, 1fr); padding: 8px; font-size: 12px; background: var(--bg-primary); border-radius: 0 0 4px 4px;">
-                                <span>Copilot CLI</span>
-                                <span style="text-align: center;">32</span>
-                                <span style="text-align: center;">$0.65</span>
-                                <span style="text-align: center;">0.9s</span>
-                                <span style="text-align: center; color: var(--accent-green);">1</span>
+                            <div class="tool-common-failures">
+                                <span class="failures-label">常见失败原因:</span>
+                                <span class="failures-content">-</span>
                             </div>
                         </div>
                     </div>
@@ -2939,15 +3241,460 @@
             });
         }
 
-        function fmtTime(ts) { return ts ? new Date(parseInt(ts)).toLocaleTimeString() : '-'; }
-        function fmtDateTime(ts) { return ts ? new Date(parseInt(ts)).toLocaleString() : '-'; }
+        // ===== Tool Input Formatter (Transcripts-style) =====
+        function formatToolInput(toolName, toolInput) {
+            if (!toolInput) return '';
+
+            let html = '<div class="tool-detail-section-title">输入参数</div>';
+
+            // Handle different tool types
+            if (toolName === 'Edit') {
+                const filePath = toolInput.file_path || '';
+                const oldStr = toolInput.old_string || '';
+                const newStr = toolInput.new_string || '';
+                const replaceAll = toolInput.replace_all;
+
+                html += `
+                    <div class="file-tool-header">
+                        <span class="file-tool-icon">✏️</span> Edit
+                        <span class="file-tool-path">${getFilename(filePath)}</span>
+                        ${replaceAll ? '<span class="edit-replace-all">(replace all)</span>' : ''}
+                    </div>
+                    <div class="file-tool-fullpath">${filePath}</div>
+                    <div class="${getTruncatableClass(oldStr.length + newStr.length)}" data-content-length="${oldStr.length + newStr.length}">
+                        <div class="truncatable-content">
+                            <div class="edit-section edit-old">
+                                <div class="edit-label">−</div>
+                                <pre class="edit-content">${escapeHtml(oldStr)}</pre>
+                            </div>
+                            <div class="edit-section edit-new">
+                                <div class="edit-label">+</div>
+                                <pre class="edit-content">${escapeHtml(newStr)}</pre>
+                            </div>
+                        </div>
+                        <button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>
+                    </div>`;
+            } else if (toolName === 'Write') {
+                const filePath = toolInput.file_path || '';
+                const content = toolInput.content || '';
+
+                html += `
+                    <div class="file-tool-header">
+                        <span class="file-tool-icon">📝</span> Write
+                        <span class="file-tool-path">${getFilename(filePath)}</span>
+                    </div>
+                    <div class="file-tool-fullpath">${filePath}</div>
+                    <div class="${getTruncatableClass(content.length)}" data-content-length="${content.length}">
+                        <div class="truncatable-content">
+                            <pre class="edit-content">${escapeHtml(content)}</pre>
+                        </div>
+                        <button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>
+                    </div>`;
+            } else if (toolName === 'Read') {
+                const filePath = toolInput.file_path || '';
+                const limit = toolInput.limit;
+                const offset = toolInput.offset;
+
+                html += `
+                    <div class="file-tool-header">
+                        <span class="file-tool-icon">📄</span> Read
+                        <span class="file-tool-path">${getFilename(filePath)}</span>
+                    </div>
+                    <div class="file-tool-fullpath">${filePath}</div>
+                    ${limit ? '<div class="tool-description">limit: ' + limit + (offset ? ', offset: ' + offset : '') + '</div>' : ''}`;
+            } else if (toolName === 'Bash') {
+                const command = toolInput.command || '';
+                const description = toolInput.description || '';
+                const timeout = toolInput.timeout;
+
+                html += `
+                    <div style="color: var(--accent-green); font-weight: 600; margin-bottom: 8px;">
+                        <span style="font-size: 14px;">$</span> Bash
+                    </div>
+                    ${description ? '<div class="tool-description">' + escapeHtml(description) + '</div>' : ''}
+                    ${timeout ? '<div class="tool-description">timeout: ' + timeout + 'ms</div>' : ''}
+                    <div class="${getTruncatableClass(command.length)}" data-content-length="${command.length}">
+                        <div class="truncatable-content">
+                            <pre class="bash-command">${escapeHtml(command)}</pre>
+                        </div>
+                        <button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>
+                    </div>`;
+            } else if (toolName === 'TodoWrite') {
+                const todos = toolInput.todos || [];
+
+                html += `
+                    <div class="todo-list">
+                        <div class="todo-header">
+                            <span>☰</span> Task List
+                        </div>
+                        <ul class="todo-items">
+                            ${todos.map(todo => {
+                                const status = todo.status || 'pending';
+                                const content = todo.content || '';
+                                let icon, statusClass;
+                                if (status === 'completed') {
+                                    icon = '✓'; statusClass = 'todo-completed';
+                                } else if (status === 'in_progress') {
+                                    icon = '→'; statusClass = 'todo-in-progress';
+                                } else {
+                                    icon = '○'; statusClass = 'todo-pending';
+                                }
+                                return '<li class="todo-item ' + statusClass + '">' +
+                                    '<span class="todo-icon">' + icon + '</span>' +
+                                    '<span class="todo-content">' + escapeHtml(content) + '</span>' +
+                                '</li>';
+                            }).join('')}
+                        </ul>
+                    </div>`;
+            } else {
+                // Generic tool - show JSON
+                const description = toolInput.description || '';
+                const displayInput = {};
+                for (const [k, v] of Object.entries(toolInput)) {
+                    if (k !== 'description') displayInput[k] = v;
+                }
+                const jsonStr = JSON.stringify(displayInput, null, 2);
+
+                html += `
+                    <div class="file-tool-header">
+                        <span class="file-tool-icon">⚙</span> ${toolName}
+                    </div>
+                    ${description ? '<div class="tool-description">' + escapeHtml(description) + '</div>' : ''}
+                    <div class="${getTruncatableClass(jsonStr.length)}" data-content-length="${jsonStr.length}">
+                        <div class="truncatable-content">
+                            <pre class="edit-content">${escapeHtml(jsonStr)}</pre>
+                        </div>
+                        <button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>
+                    </div>`;
+            }
+
+            return html;
+        }
+
+        // ===== Tool Result Formatter =====
+        function formatToolResult(toolResult, isError, toolName) {
+            if (!toolResult) return '';
+
+            let html = '<div class="tool-detail-section-title">输出结果</div>';
+            const errorStyle = isError ? ' style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1);"' : '';
+
+            // Try to parse as JSON first (most tools return JSON format)
+            if (typeof toolResult === 'string') {
+                try {
+                    const parsed = JSON.parse(toolResult);
+
+                    // Bash-style result: {interrupted, stdout, stderr}
+                    if (parsed.stdout !== undefined || parsed.stderr !== undefined) {
+                        let outputParts = [];
+                        const outputLen = (parsed.stdout || '').length + (parsed.stderr || '').length;
+                        if (parsed.stdout) {
+                            outputParts.push('<div style="margin-bottom: 8px;">' +
+                                '<span style="color: var(--accent-green); font-size: 10px;">stdout:</span>' +
+                                '<pre style="margin: 4px 0; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 4px; font-size: 11px; white-space: pre-wrap;">' + escapeHtml(parsed.stdout) + '</pre>' +
+                            '</div>');
+                        }
+                        if (parsed.stderr) {
+                            outputParts.push('<div style="margin-bottom: 8px;">' +
+                                '<span style="color: var(--accent); font-size: 10px;">stderr:</span>' +
+                                '<pre style="margin: 4px 0; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 4px; font-size: 11px; color: #dc2626; white-space: pre-wrap;">' + escapeHtml(parsed.stderr) + '</pre>' +
+                            '</div>');
+                        }
+                        if (parsed.interrupted) {
+                            outputParts.push('<div style="color: var(--accent); font-size: 11px;">⚠️ 执行被中断</div>');
+                        }
+                        if (outputParts.length > 0) {
+                            html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                                '<div class="' + getTruncatableClass(outputLen) + '">' +
+                                    '<div class="truncatable-content">' + outputParts.join('') + '</div>' +
+                                    '<button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>' +
+                                '</div>' +
+                            '</div>';
+                            return html;
+                        }
+                    }
+
+                    // Read-style result: {file: {content: "..."}}
+                    if (parsed.file && parsed.file.content) {
+                        const content = parsed.file.content;
+                        html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                            '<div style="color: var(--accent-blue); font-size: 10px; margin-bottom: 4px;">📄 文件内容:</div>' +
+                            '<div class="' + getTruncatableClass(content.length) + '" data-content-length="' + content.length + '">' +
+                                '<div class="truncatable-content">' +
+                                    '<pre style="background: rgba(102, 126, 234, 0.1); padding: 8px; border-radius: 4px; font-size: 11px; white-space: pre-wrap; word-wrap: break-word;">' + escapeHtml(content) + '</pre>' +
+                                '</div>' +
+                                '<button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>' +
+                            '</div>' +
+                        '</div>';
+                        return html;
+                    }
+
+                    // Write result: simple message or success
+                    if (toolName === 'Write') {
+                        html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                            '<div style="color: var(--accent-green); padding: 8px;">✅ 文件写入成功</div>' +
+                        '</div>';
+                        return html;
+                    }
+
+                    // Edit result: {result: "..."} or simple success
+                    if (toolName === 'Edit') {
+                        const editResult = parsed.result || parsed.message || '✅ 编辑成功';
+                        html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                            '<pre style="background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 4px; font-size: 11px; white-space: pre-wrap;">' + escapeHtml(editResult) + '</pre>' +
+                        '</div>';
+                        return html;
+                    }
+
+                    // LSP result: structured data
+                    if (toolName === 'LSP' && parsed.result) {
+                        const lspResult = parsed.result;
+                        html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                            '<pre style="background: rgba(102, 126, 234, 0.1); padding: 8px; border-radius: 4px; font-size: 11px;">' + escapeHtml(JSON.stringify(lspResult, null, 2)) + '</pre>' +
+                        '</div>';
+                        return html;
+                    }
+
+                    // TaskCreate result: {task: {id, subject}}
+                    if (parsed.task && parsed.task.id) {
+                        const task = parsed.task;
+                        html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                            '<div class="todo-list">' +
+                            '<div class="todo-header"><span>📋</span> 任务已创建</div>' +
+                            '<ul class="todo-items">' +
+                            '<li class="todo-item todo-pending">' +
+                            '<span class="todo-icon">○</span>' +
+                            '<span class="todo-content">' +
+                            '<strong>#' + task.id + '</strong>: ' + escapeHtml(task.subject || '') +
+                            '</span></li></ul></div>' +
+                        '</div>';
+                        return html;
+                    }
+
+                    // TaskUpdate result: {statusChange, success, taskId}
+                    if (parsed.statusChange || parsed.success !== undefined) {
+                        const fromStatus = parsed.statusChange?.from || '';
+                        const toStatus = parsed.statusChange?.to || '';
+                        const taskId = parsed.taskId || '';
+                        let icon, statusClass;
+                        if (toStatus === 'completed') {
+                            icon = '✓'; statusClass = 'todo-completed';
+                        } else if (toStatus === 'in_progress') {
+                            icon = '→'; statusClass = 'todo-in-progress';
+                        } else {
+                            icon = '○'; statusClass = 'todo-pending';
+                        }
+                        html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                            '<div class="todo-list">' +
+                            '<div class="todo-header"><span>📝</span> 任务状态更新</div>' +
+                            '<ul class="todo-items">' +
+                            '<li class="todo-item ' + statusClass + '">' +
+                            '<span class="todo-icon">' + icon + '</span>' +
+                            '<span class="todo-content">' +
+                            '<strong>#' + taskId + '</strong>: ' +
+                            fromStatus + ' → <strong>' + toStatus + '</strong>' +
+                            '</span></li></ul></div>' +
+                        '</div>';
+                        return html;
+                    }
+
+                    // Edit result with filePath and newString/oldString
+                    if (parsed.filePath && parsed.newString !== undefined) {
+                        const filePath = parsed.filePath;
+                        const oldStr = parsed.oldString || '';
+                        const newStr = parsed.newString || '';
+                        const editLen = oldStr.length + newStr.length;
+                        html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                            '<div class="file-tool-header">' +
+                            '<span class="file-tool-icon">✏️</span> Edit 结果' +
+                            '<span class="file-tool-path">' + filePath.split('/').pop() + '</span>' +
+                            '</div>' +
+                            '<div class="file-tool-fullpath">' + filePath + '</div>' +
+                            '<div class="' + getTruncatableClass(editLen) + '" data-content-length="' + editLen + '">' +
+                            '<div class="truncatable-content">' +
+                            (oldStr ? '<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content">' + escapeHtml(oldStr) + '</pre></div>' : '') +
+                            '<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content">' + escapeHtml(newStr) + '</pre></div>' +
+                            '</div>' +
+                            '<button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>' +
+                            '</div></div>';
+                        return html;
+                    }
+
+                    // Other JSON objects - show formatted JSON
+                    toolResult = parsed;
+                } catch {
+                    // Not JSON, continue with string handling
+                }
+            }
+
+            // Check for git commits
+            const commitPattern = /\[[\w\-/]+ ([a-f0-9]{7,})\] (.+?)(?:\n|$)/g;
+
+            if (typeof toolResult === 'string') {
+                const commits = [...toolResult.matchAll(commitPattern)];
+
+                if (commits.length > 0) {
+                    // Render with commit cards
+                    let parts = [];
+                    let lastEnd = 0;
+
+                    for (const match of commits) {
+                        const before = toolResult.substring(lastEnd, match.index).trim();
+                        if (before) {
+                            parts.push('<pre>' + escapeHtml(before) + '</pre>');
+                        }
+                        parts.push('<div class="commit-card">' +
+                            '<span class="commit-card-hash">' + match[1] + '</span>' +
+                            escapeHtml(match[2]) +
+                        '</div>');
+                        lastEnd = match.index + match[0].length;
+                    }
+
+                    const after = toolResult.substring(lastEnd).trim();
+                    if (after) {
+                        parts.push('<pre>' + escapeHtml(after) + '</pre>');
+                    }
+
+                    html += '<div class="tool-detail-output"' + errorStyle + '>' + parts.join('') + '</div>';
+                } else {
+                    // Plain text result
+                    html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                        '<div class="' + getTruncatableClass(toolResult.length) + '" data-content-length="' + toolResult.length + '">' +
+                            '<div class="truncatable-content">' +
+                                '<pre>' + escapeHtml(toolResult) + '</pre>' +
+                            '</div>' +
+                            '<button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>' +
+                        '</div>' +
+                    '</div>';
+                }
+            } else if (Array.isArray(toolResult)) {
+                // Multi-block result
+                let parts = [];
+                let hasImages = false;
+
+                for (const item of toolResult) {
+                    if (typeof item === 'string') {
+                        parts.push('<pre>' + escapeHtml(item) + '</pre>');
+                    } else if (item && typeof item === 'object') {
+                        const itemType = item.type || '';
+                        if (itemType === 'text') {
+                            parts.push('<pre>' + escapeHtml(item.text || '') + '</pre>');
+                        } else if (itemType === 'image') {
+                            const source = item.source || {};
+                            const mediaType = source.media_type || 'image/png';
+                            const data = source.data || '';
+                            if (data) {
+                                parts.push('<div class="image-block">' +
+                                    '<img src="data:' + mediaType + ';base64,' + data + '" style="max-width: 100%;">' +
+                                '</div>');
+                                hasImages = true;
+                            }
+                        } else {
+                            parts.push('<pre>' + escapeHtml(JSON.stringify(item, null, 2)) + '</pre>');
+                        }
+                    }
+                }
+
+                if (hasImages) {
+                    html += '<div class="tool-detail-output"' + errorStyle + '>' + parts.join('') + '</div>';
+                } else {
+                    html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                        '<div class="truncatable">' +
+                            '<div class="truncatable-content">' + parts.join('') + '</div>' +
+                            '<button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>' +
+                        '</div>' +
+                    '</div>';
+                }
+            } else {
+                // JSON object result
+                const jsonStr = JSON.stringify(toolResult, null, 2);
+                html += '<div class="tool-detail-output"' + errorStyle + '>' +
+                    '<div class="' + getTruncatableClass(jsonStr.length) + '" data-content-length="' + jsonStr.length + '">' +
+                        '<div class="truncatable-content">' +
+                            '<pre>' + escapeHtml(jsonStr) + '</pre>' +
+                        '</div>' +
+                        '<button class="expand-btn" onclick="toggleTruncatable(this)">Show more</button>' +
+                    '</div>' +
+                '</div>';
+            }
+
+            return html;
+        }
+
+        // ===== Helper Functions =====
+        function getFilename(path) {
+            return path ? path.split('/').pop() : '';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;')
+                              .replace(/</g, '&lt;')
+                              .replace(/>/g, '&gt;')
+                              .replace(/"/g, '&quot;')
+                              .replace(/'/g, '&#039;');
+        }
+
+        function toggleTruncatable(btn) {
+            const container = btn.parentElement;
+            if (container.classList.contains('truncated')) {
+                container.classList.remove('truncated');
+                container.classList.add('expanded');
+                btn.textContent = 'Show less';
+            } else {
+                container.classList.remove('expanded');
+                container.classList.add('truncated');
+                btn.textContent = 'Show more';
+            }
+        }
+
+        // Helper: get truncatable class based on content length
+        function getTruncatableClass(length, threshold = 800) {
+            // Only truncate if content is longer than threshold
+            return length > threshold ? 'truncatable truncated' : 'truncatable';
+        }
+
+        // Parse timestamp (ISO string or numeric) to milliseconds
+        function parseTs(ts) {
+            if (!ts) return 0;
+            if (typeof ts === 'number') return ts;
+            // ISO string like "2026-05-22T10:26:47+08:00"
+            return new Date(ts).getTime();
+        }
+
+        function fmtTime(ts) {
+            if (!ts) return '-';
+            const d = typeof ts === 'string' ? new Date(ts) : new Date(parseInt(ts));
+            return d.toLocaleTimeString();
+        }
+        function fmtDateTime(ts) {
+            if (!ts) return '-';
+            const d = typeof ts === 'string' ? new Date(ts) : new Date(parseInt(ts));
+            return d.toLocaleString();
+        }
+
+        // Generate suggestion based on problem type
+        function generateSuggestion(problemType, extra) {
+            const suggestions = {
+                'slow_tool': '检查工具配置，优化执行参数，或考虑拆分任务',
+                'slow_tool_critical': '立即优化该工具，考虑并行执行或缓存策略',
+                'tool_failure': '检查工具权限、输入参数或外部依赖',
+                'error_spike': '检查最近的代码变更或环境配置',
+                'high_cost': '优化 prompt 设计，减少不必要的重复调用',
+                'cache_miss': '检查缓存配置，确保 prompt 一致性',
+                'subagent_depth': '简化 agent 嵌套，考虑合并任务',
+                'turn_loop': '检查对话逻辑，避免重复提问',
+                'timeout': '检查网络连接，调整超时参数'
+            };
+            return suggestions[problemType] || '检查相关日志和上下文以定位问题';
+        }
         function fmtDuration(start, end) {
             if (!start || !end) return '-';
-            const d = (end - start) / 1000;
+            const d = (parseTs(end) - parseTs(start)) / 1000;
             return d < 60 ? d.toFixed(0) + 's' : Math.floor(d/60) + 'm ' + (d%60).toFixed(0) + 's';
         }
 
         let anomaliesCache = [];
+        let problemDetailCache = null;
         let sessionsCache = [];
 
         // ==================== REST API Data Loading Functions ====================
@@ -2978,20 +3725,22 @@
         async function loadProblemDetail(problemId) {
             const data = await fetchAPI(`/api/problems/${problemId}`);
             if (data) {
+                problemDetailCache = data;
                 renderProblemDetail(data);
             }
         }
 
         async function loadAnalysisOverview(timeRange = 'today') {
             // 并行加载所有API
-            const [overview, cache, tools, costRanking, ttft, turnEff, subagent] = await Promise.all([
+            const [overview, cache, tools, costRanking, ttft, turnEff, subagent, models] = await Promise.all([
                 fetchAPI(`/api/stats/overview?range=${timeRange}`),
-                fetchAPI(`/api/stats/cache?range=${timeRange}`),
-                fetchAPI(`/api/stats/tools?range=${timeRange}`),
+                fetchAPI(`/api/analysis/cache?range=${timeRange}`),
+                fetchAPI(`/api/analysis/tools?range=${timeRange}`),
                 fetchAPI(`/api/analysis/cost-ranking?range=${timeRange}`),
                 fetchAPI(`/api/analysis/ttft?range=${timeRange}`),
                 fetchAPI(`/api/analysis/turn-efficiency?range=${timeRange}`),
-                fetchAPI(`/api/analysis/subagent?range=${timeRange}`)
+                fetchAPI(`/api/analysis/subagent?range=${timeRange}`),
+                fetchAPI(`/api/analysis/models?range=${timeRange}`)
             ]);
 
             renderAnalysisOverview({
@@ -3005,6 +3754,7 @@
             if (ttft) renderTTFTDistribution(ttft);
             if (turnEff) renderTurnEfficiency(turnEff);
             if (subagent) renderSubagentCost(subagent);
+            if (models) renderModels(models);
         }
 
         // ==================== Cost Ranking ====================
@@ -3013,6 +3763,78 @@
             if (data && data.cost_ranking) {
                 renderCostRanking(data);
             }
+        }
+
+        // ==================== Models Distribution ====================
+        function renderModels(data) {
+            const container = document.querySelector('.model-list-container');
+
+            if (!container) return;
+
+            const models = data.models || [];
+
+            if (models.length === 0 || !models[0].name) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">暂无模型数据</div>';
+                return;
+            }
+
+            // Render model rows
+            container.innerHTML = models.map(model => {
+                const badgeClass = getModelBadgeClass(model.name);
+                const fillClass = getModelFillClass(model.name);
+                const percentage = parseFloat(model.percentage) || 0;
+                const tokens = parseInt(model.tokens) || 0;
+                const cache = parseInt(model.cache) || 0;
+
+                // Format numbers
+                const tokensStr = tokens > 1000000 ? (tokens / 1000000).toFixed(1) + 'M' :
+                                  tokens > 1000 ? (tokens / 1000).toFixed(1) + 'K' : tokens;
+                const cacheStr = cache > 1000000 ? (cache / 1000000).toFixed(1) + 'M' :
+                                 cache > 1000 ? (cache / 1000).toFixed(1) + 'K' : cache;
+
+                return `
+                    <div class="model-row">
+                        <div class="model-info">
+                            <div class="model-name">
+                                <span class="model-badge ${badgeClass}">${model.name}</span>
+                            </div>
+                            <div class="model-stats">
+                                <span class="model-stat-item">
+                                    <span class="model-stat-icon">📊</span>
+                                    <span>${tokensStr} tokens</span>
+                                </span>
+                                <span class="model-stat-item">
+                                    <span class="model-stat-icon">⚡</span>
+                                    <span>${cacheStr} cache</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="model-bar-container">
+                            <div class="model-bar-fill ${fillClass}" style="width: ${percentage}%;"></div>
+                        </div>
+                        <div class="model-percentage">${model.percentage}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function getModelBadgeClass(modelName) {
+            const name = modelName.toLowerCase();
+            if (name.includes('opus')) return 'model-badge-opus';
+            if (name.includes('sonnet')) return 'model-badge-sonnet';
+            if (name.includes('haiku')) return 'model-badge-haiku';
+            if (name.includes('gpt')) return 'model-badge-gpt';
+            if (name.includes('glm')) return 'model-badge-glm';
+            return 'model-badge-other';
+        }
+
+        function getModelFillClass(modelName) {
+            const name = modelName.toLowerCase();
+            if (name.includes('opus')) return 'model-bar-fill-opus';
+            if (name.includes('sonnet')) return 'model-bar-fill-sonnet';
+            if (name.includes('haiku')) return 'model-bar-fill-haiku';
+            if (name.includes('gpt')) return 'model-bar-fill-gpt';
+            if (name.includes('glm')) return 'model-bar-fill-glm';
+            return 'model-bar-fill-other';
         }
 
         function renderCostRanking(data) {
@@ -3276,25 +4098,76 @@
             const toolDurations = {};
             events.forEach(e => {
                 if (e.event_type === 'PreToolUse' && e.tool_use_id) {
-                    toolStartTimes[e.tool_use_id] = e.ts;
+                    toolStartTimes[e.tool_use_id] = parseTs(e.ts);
                 } else if ((e.event_type === 'PostToolUse' || e.event_type === 'PostToolUseFailure') && e.tool_use_id) {
                     const startTime = toolStartTimes[e.tool_use_id];
                     if (startTime) {
-                        toolDurations[e.tool_use_id] = e.ts - startTime;
+                        toolDurations[e.tool_use_id] = parseTs(e.ts) - startTime;
                     }
                 }
             });
 
-            const start = events[0].ts, end = events[events.length-1].ts, dur = end - start;
+            // Calculate timeline range using parsed timestamps
+            const startTs = parseTs(events[0].ts);
+            const endTs = parseTs(events[events.length-1].ts);
+            const durMs = endTs - startTs;
 
-            // Update timeline
+            // Timeline: Only show key events (UserPromptSubmit + PostToolUse)
+            // Use real duration for width calculation
+            const SLOW_THRESHOLD_MS = 10000; // 10 seconds = slow tool
+            const MIN_WIDTH_PERCENT = 2;     // minimum visible width
+            const MAX_WIDTH_PERCENT = 30;    // maximum width for very long tools
+
             const timelineTrack = panel.querySelector('.timeline-full-track');
             let timelineHtml = '';
+
             events.forEach(e => {
-                const pos = dur > 0 ? ((e.ts - start) / dur) * 100 : 0;
-                const cls = e.error_flag ? 'error' : e.tool_name ? 'tool' : 'user';
-                const lbl = e.tool_name || e.event_type;
-                timelineHtml += `<div class="timeline-block ${cls}" style="left: ${Math.min(pos,95)}%; width: 6%;"><span class="timeline-tooltip">${fmtTime(e.ts)}: ${lbl}</span>${lbl.substring(0,5)}</div>`;
+                // Skip PreToolUse - show only PostToolUse (has duration) and UserPromptSubmit
+                if (e.event_type === 'PreToolUse') return;
+
+                const eTs = parseTs(e.ts);
+                const pos = durMs > 0 ? ((eTs - startTs) / durMs) * 100 : 0;
+
+                let cls, lbl, width, durationSec = 0;
+
+                if (e.event_type === 'UserPromptSubmit') {
+                    // User interaction - green, fixed width
+                    cls = 'user';
+                    lbl = 'User';
+                    width = MIN_WIDTH_PERCENT;
+                } else if (e.event_type === 'PostToolUse' || e.event_type === 'PostToolUseFailure') {
+                    // Tool execution - use real duration
+                    const toolDuration = toolDurations[e.tool_use_id] || 0;
+                    durationSec = toolDuration / 1000;
+
+                    // Calculate width based on duration ratio
+                    if (durMs > 0 && toolDuration > 0) {
+                        width = Math.max(MIN_WIDTH_PERCENT, Math.min((toolDuration / durMs) * 100, MAX_WIDTH_PERCENT));
+                    } else {
+                        width = MIN_WIDTH_PERCENT;
+                    }
+
+                    // Determine color: error=red, slow=yellow, normal=blue
+                    if (e.error_flag) {
+                        cls = 'error';
+                    } else if (toolDuration > SLOW_THRESHOLD_MS) {
+                        cls = 'slow';
+                    } else {
+                        cls = 'tool';
+                    }
+                    lbl = e.tool_name || 'Tool';
+                } else {
+                    // Other events - skip
+                    return;
+                }
+
+                const shortLbl = lbl.substring(0, 8);
+                const durationText = durationSec > 0 ? ` | ${durationSec.toFixed(1)}s` : '';
+                const tooltipText = `${lbl}${durationText} | ${fmtTime(e.ts)}`;
+
+                timelineHtml += `<div class="timeline-block ${cls}" style="left: ${Math.min(pos, 98 - width)}%; width: ${width}%;">
+                    <span class="timeline-tooltip">${tooltipText}</span>${shortLbl}
+                </div>`;
             });
             timelineTrack.innerHTML = timelineHtml;
 
@@ -3373,16 +4246,38 @@
             badge.textContent = data.severity || 'medium';
             timeSpan.textContent = data.time || '-';
 
-            // Update stats-row
+            // Update stats-row - dynamic rendering based on API data
             const statsRow = panel.querySelector('.stats-row');
-            const stats = statsRow.querySelectorAll('.stat-card');
+            statsRow.innerHTML = '';
             if (data.stat_cards && data.stat_cards.length > 0) {
-                data.stat_cards.forEach((stat, i) => {
-                    if (stats[i]) {
-                        stats[i].querySelector('.stat-value').textContent = stat.value || '-';
-                        stats[i].querySelector('.stat-value').className = `stat-value ${stat.has_error ? 'error' : ''}`;
-                    }
+                data.stat_cards.forEach(stat => {
+                    const card = document.createElement('div');
+                    card.className = 'stat-card';
+                    card.innerHTML = `
+                        <div class="stat-label">${stat.label || '-'}</div>
+                        <div class="stat-value ${stat.has_error ? 'error' : ''}">${stat.value || '-'}</div>
+                    `;
+                    statsRow.appendChild(card);
                 });
+            }
+            // Add session and agent info if available
+            if (data.session_id) {
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                card.innerHTML = `
+                    <div class="stat-label">Session</div>
+                    <div class="stat-value" style="font-size: 14px;">${data.session_id.substring(0, 8)}</div>
+                `;
+                statsRow.appendChild(card);
+            }
+            if (data.extra && data.extra.agent_source) {
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                card.innerHTML = `
+                    <div class="stat-label">Agent</div>
+                    <div class="stat-value" style="font-size: 14px;">${data.extra.agent_source}</div>
+                `;
+                statsRow.appendChild(card);
             }
 
             // Keep existing inference and timeline rendering
@@ -3413,11 +4308,14 @@
 
             const panel = document.querySelector('.detail-panel');
 
-            // Update inference
-            const inference = getInference(problemType, extra);
+            // Update inference - use API data directly
             const inferenceTexts = panel.querySelectorAll('.inference-box .inference-text, .suggestion-box .inference-text');
-            if (inferenceTexts[0]) inferenceTexts[0].textContent = inference.result;
-            if (inferenceTexts[1]) inferenceTexts[1].textContent = inference.suggestion;
+            if (inferenceTexts[0]) {
+                inferenceTexts[0].textContent = problemDetailCache?.suggested_cause || problemDetailCache?.description || '分析中...';
+            }
+            if (inferenceTexts[1]) {
+                inferenceTexts[1].textContent = generateSuggestion(problemType, extra);
+            }
 
             // Update related events
             const relatedEvents = panel.querySelector('.related-events');
@@ -3451,28 +4349,68 @@
                 }
             }
 
-            // Process cache data
+            // Process cache data - format same as tokens (K/M)
             if (data.cache) {
-                const cacheData = parseResult(data.cache);
+                const cacheData = data.cache.cache_stats || [];
                 if (cacheData.length > 0) {
-                    const cacheRead = cacheData[0].cache_read || 0;
+                    // cache_stats[0] is cache read tokens
+                    const cacheRead = parseInt(cacheData[0]?.value) || 0;
                     document.querySelector('.analysis-card:nth-child(3) .analysis-card-value').textContent =
-                        cacheRead > 0 ? cacheRead : '-';
+                        cacheRead > 0 ? (cacheRead >= 1000000 ? (cacheRead/1000000).toFixed(1) + 'M' :
+                                        cacheRead >= 1000 ? (cacheRead/1000).toFixed(1) + 'K' : cacheRead) : '-';
                 }
             }
 
             // Process tools data for heatmap
             if (data.tools) {
-                const toolsData = parseResult(data.tools);
-                const heatmap = document.querySelector('.heatmap-grid');
-                if (heatmap && toolsData.length) {
-                    heatmap.innerHTML = toolsData.map(t => `
-                        <div class="heatmap-cell">
-                            <div class="heatmap-label">${t.tool_name}</div>
-                            <div class="heatmap-value ${t.error_count > 0 ? 'medium' : 'low'}">${t.call_count}</div>
-                            <div style="font-size: 10px; color: var(--accent-green);">${t.error_count > 0 ? (t.call_count - t.error_count) + '/' + t.call_count : '100%'}</div>
-                        </div>
-                    `).join('');
+                const toolsData = data.tools.tool_heatmap || [];
+                const bashDetail = data.tools.bash_detail || {};
+                const container = document.querySelector('.tool-heatmap-container');
+                const detailPanel = document.querySelector('.tool-detail-panel');
+
+                if (container && toolsData.length) {
+                    // Tool icons
+                    const toolIcons = {
+                        'Read': '📄', 'Edit': '✏️', 'Write': '📝', 'Bash': '💻',
+                        'Grep': '🔍', 'Agent': '🤖', 'Glob': '📁', 'LSP': '🔧',
+                        'WebFetch': '🌐', 'WebSearch': '🔎', 'TodoWrite': '📋'
+                    };
+
+                    container.innerHTML = toolsData.map(t => {
+                        const count = parseInt(t.call_count) || 0;
+                        const rate = parseFloat(t.success_rate) || 100;
+                        const icon = toolIcons[t.tool_name] || '⚙️';
+
+                        // Determine classes
+                        let countClass = count > 50 ? 'high' : count > 20 ? 'medium' : 'low';
+                        let rateClass = rate >= 95 ? 'success' : rate >= 80 ? 'warning' : 'error';
+                        let rateIcon = rate >= 95 ? '✓' : rate >= 80 ? '⚠' : '✗';
+
+                        return `
+                            <div class="tool-heatmap-item" onclick="selectTool('${t.tool_name}')">
+                                <div class="tool-item-name">
+                                    <span class="tool-item-icon">${icon}</span>
+                                    ${t.tool_name}
+                                </div>
+                                <div class="tool-item-count ${countClass}">${count}</div>
+                                <div class="tool-item-rate ${rateClass}">${rateIcon} ${rate}%</div>
+                                <div class="tool-item-time">${t.avg_time || '-'}</div>
+                            </div>`;
+                    }).join('');
+                }
+
+                // Update detail panel for Bash
+                if (detailPanel && bashDetail) {
+                    detailPanel.querySelector('.tool-detail-title').textContent =
+                        bashDetail.tool_name || 'Bash 工具详情';
+                    detailPanel.querySelectorAll('.tool-stat-value')[0].textContent =
+                        bashDetail.fail_count || '-';
+                    detailPanel.querySelectorAll('.tool-stat-value')[1].textContent =
+                        bashDetail.timeout_count || '-';
+                    detailPanel.querySelectorAll('.tool-stat-value')[2].textContent =
+                        bashDetail.user_approved || '-';
+                    detailPanel.querySelector('.failures-content').textContent =
+                        bashDetail.common_failures || '-';
                 }
             }
 
@@ -3641,6 +4579,15 @@
                         } catch {}
                     }
 
+                    // Parse tool_input and tool_result safely for formatting
+                    let safeInput = null;
+                    let safeResult = e.tool_result;
+                    if (e.tool_input) {
+                        try {
+                            safeInput = typeof e.tool_input === 'string' ? JSON.parse(e.tool_input) : e.tool_input;
+                        } catch { safeInput = null; }
+                    }
+
                     // Get tool duration from toolDurations map
                     const toolDuration = toolDurations[e.tool_use_id] || 0;
                     const durationStr = fmtDurationMs(toolDuration);
@@ -3674,8 +4621,8 @@
                             ${isSubagent ? '<div class="tool-detail-row"><span class="tool-detail-label">Subagent ID</span><span class="tool-detail-value">' + (e.agent_id || '-') + '</span></div>' : ''}
                             <div class="tool-detail-row"><span class="tool-detail-label">执行耗时</span><span class="tool-detail-value ${durationClass}">${durationStr}</span></div>
                             <div class="tool-detail-row"><span class="tool-detail-label">开始时间</span><span class="tool-detail-value">${fmtTime(e.ts)}</span></div>
-                            ${e.tool_input ? '<div class="tool-detail-section-title">输入参数</div><div class="tool-detail-input">' + (typeof e.tool_input === 'string' ? e.tool_input.substring(0,2000) : JSON.stringify(e.tool_input,null,2).substring(0,2000)) + '</div>' : ''}
-                            ${e.tool_result ? '<div class="tool-detail-section-title">输出结果</div><div class="tool-detail-output">' + (typeof e.tool_result === 'string' ? e.tool_result.substring(0,2000) : JSON.stringify(e.tool_result,null,2).substring(0,2000)) + '</div>' : ''}
+                            ${safeInput ? formatToolInput(e.tool_name, safeInput) : ''}
+                            ${safeResult ? formatToolResult(safeResult, e.error_flag, e.tool_name) : ''}
                         </div>`;
                 } else if (e.event_type === 'UserPromptSubmit') {
                     // LLM Call - show with message data if available
@@ -3684,6 +4631,7 @@
                     const outputTokens = llmMessage?.output_tokens || 0;
                     const cacheRead = llmMessage?.cache_read_tokens || 0;
                     const contentPreview = llmMessage?.content ? llmMessage.content.substring(0, 100) : '';
+                    const userPrompt = e.tool_input || '无用户输入';
 
                     // Calculate cost (approximate)
                     const cost = ((inputTokens * 0.003 + outputTokens * 0.015) / 1000).toFixed(2);
@@ -3710,6 +4658,10 @@
                             <div class="llm-timing-row">
                                 <div class="llm-timing-item"><div class="llm-timing-label">TTFT</div><div class="llm-timing-value">${llmMessage ? '-' : '无数据'}</div></div>
                                 <div class="llm-timing-item"><div class="llm-timing-label">总耗时</div><div class="llm-timing-value">${llmMessage ? '-' : '无数据'}</div></div>
+                            </div>
+                            <div class="llm-detail-section">
+                                <div class="llm-detail-section-title">用户提示</div>
+                                <div class="llm-response-preview">${escapeHtml(userPrompt)}</div>
                             </div>
                             <div class="llm-detail-section">
                                 <div class="llm-detail-section-title">模型响应</div>
@@ -3752,7 +4704,14 @@
             const shown = detail.classList.contains('show');
             el.closest('.tool-tree').querySelectorAll('.tool-detail, .llm-detail').forEach(d => d.classList.remove('show'));
             el.closest('.tool-tree').querySelectorAll('.tree-child').forEach(c => c.style.background = '');
-            if (!shown) { detail.classList.add('show'); el.style.background = 'var(--bg-primary)'; }
+            if (!shown) {
+                detail.classList.add('show');
+                el.style.background = 'var(--bg-primary)';
+                // Auto scroll to detail after a brief delay for animation
+                setTimeout(() => {
+                    detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+            }
         }
 
         function toggleLlmDetail(el, id) {
@@ -3761,7 +4720,14 @@
             const shown = detail.classList.contains('show');
             el.closest('.tool-tree').querySelectorAll('.tool-detail, .llm-detail').forEach(d => d.classList.remove('show'));
             el.closest('.tool-tree').querySelectorAll('.tree-child').forEach(c => c.style.background = '');
-            if (!shown) { detail.classList.add('show'); el.style.background = 'linear-gradient(135deg, #1e3a5f40 0%, #2d1f4f40 100%)'; }
+            if (!shown) {
+                detail.classList.add('show');
+                el.style.background = 'linear-gradient(135deg, #1e3a5f40 0%, #2d1f4f40 100%)';
+                // Auto scroll to detail after a brief delay for animation
+                setTimeout(() => {
+                    detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+            }
         }
 
         function switchTimeRange(btn, range) {
@@ -3774,6 +4740,33 @@
         }
 
         function showToolStats(name) { switchView('sessions'); }
+
+        // Select tool and update detail panel
+        function selectTool(toolName) {
+            // Remove previous selection
+            document.querySelectorAll('.tool-heatmap-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Add selection to clicked item
+            const items = document.querySelectorAll('.tool-heatmap-item');
+            items.forEach(item => {
+                if (item.querySelector('.tool-item-name').textContent.includes(toolName)) {
+                    item.classList.add('selected');
+                }
+            });
+
+            // Update detail panel header
+            const toolIcons = {
+                'Read': '📄', 'Edit': '✏️', 'Write': '📝', 'Bash': '💻',
+                'Grep': '🔍', 'Agent': '🤖', 'Glob': '📁', 'LSP': '🔧'
+            };
+            const detailPanel = document.querySelector('.tool-detail-panel');
+            if (detailPanel) {
+                detailPanel.querySelector('.tool-detail-icon').textContent = toolIcons[toolName] || '⚙️';
+                detailPanel.querySelector('.tool-detail-title').textContent = toolName + ' 工具详情';
+            }
+        }
 
         // ==================== Init ====================
         // Task 14: Page Load Initialization

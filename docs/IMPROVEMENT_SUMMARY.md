@@ -242,23 +242,23 @@ const [overview, cache, tools, costRanking, ttft, turnEff, subagent] = await Pro
 ## ⚠️ 待完成的改进项（第三阶段）
 
 ### **改进项#5：清理TTFT硬编码HTML**
-- 状态：❌ 未完成
-- 原因：后端TTFT数据仍为Mock（需补全数据采集）
-- 建议：等待改进项#8完成后再清理
+- 状态：✅ 已完成
+- 说明：已清理TTFT硬编码bars和统计，保留空容器等待动态渲染
+- 注意：后端TTFT数据仍为Mock，前端显示"暂无TTFT数据"
 
 ### **改进项#6：清理Turn硬编码HTML**
-- 状态：❌ 未完成
-- 原因：前端渲染函数已添加，但HTML仍保留硬编码作为fallback
-- 建议：验证动态渲染稳定后删除硬编码
+- 状态：✅ 已完成
+- 说明：已清理Turn效率硬编码卡片，添加.turn-warning容器
+- 效果：动态渲染函数 renderTurnEfficiency 已可正确填充
 
 ### **改进项#7：清理Subagent硬编码HTML**
-- 状态：❌ 未完成
-- 原因：前端渲染函数已添加，但HTML仍保留硬编码作为fallback
-- 建议：验证动态渲染稳定后删除硬编码
+- 状态：✅ 已完成
+- 说明：已清理Subagent成本硬编码，添加.subagent-stats-container
+- 效果：动态渲染函数 renderSubagentCost 已可正确填充
 
 ### **改进项#8：TTFT数据采集**
-- 状态：❌ 未实施
-- 原因：需修改表结构和Hook采集逻辑（高成本）
+- 状态：❌ 待评估
+- 原因：需修改表结构和Hook采集逻辑（高成本，约10小时）
 - 建议：评估ROI后决定是否实施
 
 ---
@@ -271,9 +271,9 @@ const [overview, cache, tools, costRanking, ttft, turnEff, subagent] = await Pro
 |--------|---------|--------|--------|--------|
 | P0 | 1 | 1 | 0 | 100% |
 | P1 | 2 | 2 | 0 | 100% |
-| P2 | 4 | 1 | 3 | 25% |
+| P2 | 4 | 4 | 0 | 100% |
 | P3 | 1 | 0 | 1 | 0% |
-| **总计** | **8** | **4** | **4** | **50%** |
+| **总计** | **8** | **7** | **1** | **88%** |
 
 ### **核心改进完成情况**
 
@@ -284,7 +284,7 @@ const [overview, cache, tools, costRanking, ttft, turnEff, subagent] = await Pro
 | **后端查询补全** | Turn效率 | ✅ 完成 |
 | **后端查询补全** | Subagent成本 | ✅ 完成 |
 | **前端渲染函数** | TTFT/Turn/Subagent | ✅ 完成 |
-| **HTML清理** | 硬编码数据 | ⚠️ 部分完成 |
+| **HTML清理** | 硬编码数据 | ✅ 完成 |
 | **数据采集** | TTFT字段 | ❌ 待评估 |
 
 ---
@@ -362,6 +362,6 @@ const [overview, cache, tools, costRanking, ttft, turnEff, subagent] = await Pro
 
 ---
 
-**实施完成时间：2026-05-24**  
-**文档版本：v1.0**  
-**状态：第一阶段+第二阶段核心改进完成**
+**实施完成时间：2026-05-24（第一阶段+第二阶段） | 2026-05-25（改进项#5-#7完成）**  
+**文档版本：v2.0**  
+**状态：第一阶段+第二阶段全部改进完成（88%），仅剩TTFT数据采集待评估**

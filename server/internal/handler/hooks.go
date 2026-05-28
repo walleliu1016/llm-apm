@@ -54,6 +54,7 @@ type HookPayload struct {
 	TranscriptPath string `json:"transcript_path"`
 	CWD            string `json:"cwd"`
 	TenantID       string `json:"tenant_id"` // 预留
+	Prompt         string `json:"prompt"`    // UserPromptSubmit 的用户输入
 }
 
 const (
@@ -93,6 +94,11 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request) {
 	// Normalize tool_response
 	toolResult := normalizeToolResponse(payload.ToolResponse)
 	toolInput := serializeToolInput(payload.ToolInput)
+
+	// For UserPromptSubmit, store prompt in tool_input
+	if payload.HookEventName == "UserPromptSubmit" && payload.Prompt != "" {
+		toolInput = payload.Prompt
+	}
 
 	// Determine error flag
 	errorFlag := payload.HookEventName == "PostToolUseFailure" ||
